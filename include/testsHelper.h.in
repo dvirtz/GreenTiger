@@ -1,0 +1,27 @@
+#pragma once
+#include <string>
+#include <boost/filesystem.hpp>
+
+namespace tiger {
+
+template<typename F>
+void forEachTigerTest(F&& f) {
+  namespace fs = boost::filesystem;
+  static const fs::path testsLocation = "@TESTS_LOCATION@";
+  auto iterateTests = [&f](const fs::path& folder, bool parseError, bool compilationError)
+  {
+    for (fs::directory_entry& file : fs::directory_iterator(folder))
+    {
+      if (file.path().extension() == ".tig")
+      {
+        f(file.path(), parseError, compilationError);
+      }
+    }
+  };
+
+  iterateTests(testsLocation, false, false);
+  iterateTests(testsLocation / "compilation_error", false, true);
+  iterateTests(testsLocation / "parse_error", true, true);
+}
+
+} // namespace tiger
