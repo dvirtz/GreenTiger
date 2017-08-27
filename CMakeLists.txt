@@ -5,8 +5,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(HunterGate)
 
 HunterGate(
-    URL "https://github.com/ruslo/hunter/archive/v0.19.35.tar.gz"
-    SHA1 "bacf59b6856e37964c8eb298a57e0f6ef37e56d6"
+    URL "https://github.com/ruslo/hunter/archive/v0.19.77.tar.gz"
+    SHA1 "8898dd07756c408c63c63add903c8600c4cf4c0e"
 )
 
 project(GreenTiger)
@@ -32,7 +32,7 @@ function(parse_unit_tests target)
     set(CTEST_OPTIONS -C $<CONFIG> -L ${target})
     add_custom_command(TARGET ${target}
 	    POST_BUILD
-		COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIG> -L ${target} --output-on-failure
+		COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIG> -L ${target} --output-on-failure -j8
 	    COMMENT "Running ${target} unit tests")
 endfunction()
 
@@ -40,3 +40,4 @@ add_subdirectory(include)
 add_subdirectory(Chapter01)
 add_subdirectory(Chapter02)
 add_subdirectory(Chapter03)
+add_subdirectory(Chapter04)
