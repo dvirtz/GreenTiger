@@ -1,0 +1,15 @@
+language: cpp
+
+sudo: false
+
+compiler:
+    - gcc
+    - clang
+
+env:
+    matrix:
+        - BUILD_TYPE=Release
+    
+script:
+    cmake . -B_build -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+    cmake --build _build --target test
