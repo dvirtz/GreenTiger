@@ -39,4 +39,5 @@ install:
     
 script:
   - cmake . -B_build -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+  - cmake --build _build
   - cmake --build _build --target test
