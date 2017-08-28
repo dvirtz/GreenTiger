@@ -1,15 +1,42 @@
 language: cpp
 
 sudo: false
+  
+os:
+  - osx
+  - linux
 
 compiler:
-    - gcc
-    - clang
+  - gcc
+  - clang
 
 env:
-    matrix:
-        - BUILD_TYPE=Release
+  matrix:
+    - BUILD_TYPE=Release
+    
+cache:
+  directories:
+    - $HOME/.local
+    - $HOME/.hunter
+        
+install:
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
+      mkdir -p $HOME/.local
+      CMAKE_URL="http://cmake.org/files/v3.9/cmake-3.9.0-Linux-x86_64.tar.gz"
+      if [ ! -e $HOME/.local/bin/cmake ]; then
+        echo "CMake not found in the cache, get and extract it..."
+        travis_retry curl -L ${CMAKE_URL} \
+            | tar -xz -C $HOME/.local --strip-components=1
+      else
+        echo "Using cached CMake"
+      fi
+    fi
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
+      brew upgrade cmake || brew install cmake
+    fi
     
 script:
-    - cmake . -B_build -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-    - cmake --build _build --target test
+  - cmake . -B_build -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+  - cmake --build _build --target test
