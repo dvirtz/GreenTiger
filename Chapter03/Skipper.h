@@ -4,7 +4,7 @@
 namespace tiger {
 template <typename Iterator> class Skipper : public boost::spirit::qi::grammar<Iterator> {
 public:
-  Skipper() : base_type(start) {
+  Skipper() : Skipper::base_type(start) {
     namespace ascii = boost::spirit::ascii;
 
     using ascii::char_;

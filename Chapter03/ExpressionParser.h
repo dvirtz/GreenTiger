@@ -15,7 +15,7 @@ template <typename Iterator>
 class ExpressionParser : public boost::spirit::qi::grammar<Iterator, Skipper<Iterator>> {
 public:
   ExpressionParser(ErrorHandler<Iterator> &errorHandler)
-    : base_type(expression), identifier(errorHandler), declaration(*this, identifier, errorHandler) {
+    : ExpressionParser::base_type(expression), identifier(errorHandler), declaration(*this, identifier, errorHandler) {
     namespace spirit = boost::spirit;
     namespace qi = spirit::qi;
     namespace ascii = spirit::ascii;
@@ -61,35 +61,52 @@ public:
 
     functionCall = identifier >> '(' > -(expression % ',') > ')';
 
-    arithmeticFactor
-      = integer
+    primaryExpression
+      = lit("nil")
+      | string
+      | integer
       | functionCall
       | lvalue
       | sequence
       ;
 
-    term = arithmeticFactor >> *(char_("*/") > expression);
-
-    arithmetic = term >> *(char_("+-") > expression);
-
-    comparisonFactor
-      = lit("nil")
-      | string
-      | arithmetic
+    unaryExpression
+      = primaryExpression
+      | '-' > unaryExpression
       ;
 
-    comparison
-      = comparisonFactor
-      >> (lit("=") | "<>" | ">=" | "<=" | ">" | "<")
-      > (comparisonFactor | (lit('(') > expression > ')'))
+    multiplicativeExpression 
+      = unaryExpression 
+      >> *(char_("*/") > unaryExpression)
       ;
 
-    booleanFactor
-      = comparison
-      | arithmetic
+    additiveExpression 
+      = multiplicativeExpression 
+      >> *(char_("+-") > multiplicativeExpression)
       ;
 
-    boolean = booleanFactor >> +(char_("&|") > expression);
+    comparisonExpression
+      = additiveExpression
+      // comparison operators do not associate
+      >> -(
+        (lit("=") | "<>" | ">=" | "<=" | ">" | "<") 
+        > additiveExpression
+        )
+      ;
+
+    booleanExpression = booleanAnd | booleanOr;
+
+    booleanAnd
+      = comparisonExpression
+      >> '&'
+      > (booleanAnd | comparisonExpression)
+      ;
+
+    booleanOr
+      = comparisonExpression
+      >> '|'
+      > (booleanOr | comparisonExpression)
+      ;
 
     record = identifier >> '{' > -((identifier > '=' > expression) % ',') > '}';
 
@@ -97,16 +114,16 @@ public:
 
     assignment = lvalue >> ":=" > expression;
 
-    ifThenElse 
-      = lit("if") 
-      >> expression 
-      >> "then" 
-      >> expression 
-      >> "else" 
-      > expression
+    ifThenElse
+      = lit("if")
+      >> expression
+      >> "then"
+      >> expression
+      >> -(
+        "else"
+        > expression
+        )
       ;
-
-    ifThen = lit("if") > expression > "then" > expression;
 
     whileLoop = lit("while") > expression > "do" > expression;
 
@@ -116,29 +133,19 @@ public:
     breakExpression = lit("break");
 
     let = lit("let") > *declaration > "in" > -(expression % ';') > lit("end");
-    
-    negation = lit('-') > expression;
 
     expression
-      = lit("nil")
-      | negation
-      | boolean
-      | comparison
-      | record
+      = record
       | array
       | assignment
-      | arithmetic
-      | sequence
       | ifThenElse
-      | ifThen
       | whileLoop
       | forLoop
       | breakExpression
       | let
-      | integer
-      | string
-      | functionCall
-      | lvalue;
+      | booleanExpression
+      | comparisonExpression
+      ;
 
     on_error<fail>(expression,
       phoenix::bind(errorHandler, "Error! Expecting "s, _4, _3));
@@ -150,24 +157,22 @@ public:
       (integer)
       (string)
       (functionCall)
-      (arithmetic)
-      (comparison)
-      (boolean)
+      (additiveExpression)
+      (comparisonExpression)
+      (booleanExpression)
       (record)
       (array)
       (assignment)
       (ifThenElse)
-      (ifThen)
       (whileLoop)
       (forLoop)
       (breakExpression)
       (let)
-      (term)
-      (escapeCharacter)
-      (arithmeticFactor)
-      (comparisonFactor)
-      (booleanFactor)
-      (negation)
+      (multiplicativeExpression)
+      (primaryExpression)
+      (unaryExpression)
+      (booleanAnd)
+      (booleanOr)
     )
   }
 
@@ -184,23 +189,22 @@ private:
   rule<> integer;
   rule<> string;
   rule<> functionCall;
-  rule<> arithmetic;
-  rule<> comparison;
-  rule<> boolean;
+  rule<> additiveExpression;
+  rule<> comparisonExpression;
+  rule<> booleanExpression;
   rule<> record;
   rule<> array;
   rule<> assignment;
   rule<> ifThenElse;
-  rule<> ifThen;
   rule<> whileLoop;
   rule<> forLoop;
   rule<> breakExpression;
   rule<> let;
-  rule<> term;
-  rule<> arithmeticFactor;
-  rule<> comparisonFactor;
-  rule<> booleanFactor;
-  rule<> negation;
+  rule<> multiplicativeExpression;
+  rule<> primaryExpression;
+  rule<> unaryExpression;
+  rule<> booleanOr;
+  rule<> booleanAnd;
 
   boost::spirit::qi::rule<Iterator> escapeCharacter;
 };

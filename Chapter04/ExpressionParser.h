@@ -124,7 +124,7 @@ public:
     booleanAnd
       = comparisonExpression
       >> '&'
-      > comparisonExpression
+      > (booleanAnd | comparisonExpression)
       > attr(ast::IntExpression{ 0 })
       ;
 
@@ -132,7 +132,7 @@ public:
       = comparisonExpression
       >> '|'
       > attr(ast::IntExpression{ 1 })
-      > comparisonExpression
+      > (booleanOr | comparisonExpression)
       ;
 
     record = identifier >> '{' > -((identifier > '=' > expression) % ',') > '}';

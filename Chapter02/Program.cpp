@@ -176,7 +176,7 @@ public:
     }
 
     this->self.define(
-      "[ \t\n]+"
+      "[ \t\n\r]+"
       | m_identifier[print]
       | m_string[print]
       | m_int[print]

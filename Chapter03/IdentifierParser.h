@@ -9,7 +9,7 @@ class IdentifierParser
   : public boost::spirit::qi::grammar<Iterator, Skipper<Iterator>> {
 public:
   IdentifierParser(ErrorHandler<Iterator> &errorHandler)
-    : base_type(identifier) {
+    : IdentifierParser::base_type(identifier) {
     namespace spirit = boost::spirit;
     namespace qi = spirit::qi;
     namespace ascii = spirit::ascii;

@@ -9,13 +9,13 @@
 using namespace tiger;
 using boost::get;
 
-TEST_CASE("parse test files", "[hide]") {
+TEST_CASE("parse test files") {
   namespace fs = boost::filesystem;
   forEachTigerTest([](const fs::path &filepath, bool parseError, bool compilationError) {
     auto filename = filepath.filename();
     CAPTURE(filename);
     ast::Expression ast;
-    if (parseError || compilationError)
+    if (parseError)
     {
       REQUIRE_FALSE(parseFile(filepath.string(), ast));
     }
