@@ -364,9 +364,9 @@ inline void simplifyTree(ast::Expression& ast) {
             noop
           );
       }
-      for (auto& e : e.body)
+      for (auto& ee : e.body)
       {
-        simplifyTree(e);
+        simplifyTree(ee);
       }
     },
         [&](ast::ArrayExpression& e) { 
@@ -515,8 +515,8 @@ BOOST_FUSION_ADAPT_STRUCT(
 //   struct_tag,
 //   0,
 //   (0,0),
-//   BOOST_FUSION_ADAPT_STRUCT_C
-// )
+//   BOOST_FUSION_ADAPT_STRUCT_C
+// )
 
 // BOOST_FUSION_ADAPT_STRUCT(
 //   tiger::ast::BreakExpression

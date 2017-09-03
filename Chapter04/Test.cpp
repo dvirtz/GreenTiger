@@ -903,19 +903,16 @@ TEST_CASE("break") {
   }
 }
 
-template<typename... CheckDecls>
-auto checkLet(CheckDecls&&... checkDecls)
+template<typename... CheckDecls, typename... CheckExps>
+auto checkLet(const std::tuple<CheckDecls...>& checkDecls, const std::tuple<CheckExps...>& checkExps)
 {
-  return [=](auto&&... checkExps)
-  {
     return [=](const ast::Expression& ast)
     {
       auto pLet = get<ast::LetExpression>(&ast);
       REQUIRE(pLet);
-      applyFunctionTupleToVector(std::forward_as_tuple(checkDecls...), pLet->decs);
-      applyFunctionTupleToVector(std::forward_as_tuple(checkExps...), pLet->body);
+      applyFunctionTupleToVector(checkDecls, pLet->decs);
+      applyFunctionTupleToVector(checkExps, pLet->body);
     };
-  };
 }
 
 template<typename... CheckFuncDecls>
@@ -1059,43 +1056,45 @@ in
 end
 )", ast));
   checkLet(
-    checkTypeDeclarations(
-      checkTypeDeclaration("t1", checkNameType("int")),
-      checkTypeDeclaration("t2", checkRecordType(checkField("a", "int"), checkField("b", "t1"))),
-      checkTypeDeclaration("t3", checkArrayType("t2"))
-    ),
-    checkVarDeclaration("a", checkInt(2)),
-    checkVarDeclaration("b", checkNil(), "t3"s),
-    checkVarDeclaration("c", checkRecord("t2", checkRecordField("a", checkInt(2))), "t2"s),
-    checkFunctionDeclarations(
-      checkUntypedFunctionDeclaration(
-        "f", 
-        checkAssignment(
-          checkLValue("b", checkVarSubscript(checkInt(2))),
-          checkLValue("i")
+    std::make_tuple(
+      checkTypeDeclarations(
+        checkTypeDeclaration("t1", checkNameType("int")),
+        checkTypeDeclaration("t2", checkRecordType(checkField("a", "int"), checkField("b", "t1"))),
+        checkTypeDeclaration("t3", checkArrayType("t2"))
+      ),
+      checkVarDeclaration("a", checkInt(2)),
+      checkVarDeclaration("b", checkNil(), "t3"s),
+      checkVarDeclaration("c", checkRecord("t2", checkRecordField("a", checkInt(2))), "t2"s),
+      checkFunctionDeclarations(
+        checkUntypedFunctionDeclaration(
+          "f",
+          checkAssignment(
+            checkLValue("b", checkVarSubscript(checkInt(2))),
+            checkLValue("i")
+          ),
+          checkField("i", "int"),
+          checkField("b", "t3")
         ),
-        checkField("i", "int"),
-        checkField("b", "t3")
-      ),
-      checkFunctionDeclaration(
-        "g",
-        "t2"s,
-        checkInt(4)
+        checkFunctionDeclaration(
+          "g",
+          "t2"s,
+          checkInt(4)
+        )
       )
-    )
-  )
-  (
-    checkFunctionCall(
-      "f",
-      checkArithmetic(
-        checkLValue("a"),
-        checkOperation(ast::Operation::PLUS, checkFunctionCall("g"))
-      ),
-      checkLValue("b")
     ),
-    checkAssignment(
-      checkLValue("c", checkVarField("a")),
-      checkLValue("a")
+    std::make_tuple(
+      checkFunctionCall(
+        "f",
+        checkArithmetic(
+          checkLValue("a"),
+          checkOperation(ast::Operation::PLUS, checkFunctionCall("g"))
+        ),
+        checkLValue("b")
+      ),
+      checkAssignment(
+        checkLValue("c", checkVarField("a")),
+        checkLValue("a")
+      )
     )
   )(ast);
 }
