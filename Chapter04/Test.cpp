@@ -28,7 +28,14 @@ TEST_CASE("parse test files") {
 
 template<typename... Funcs, typename T, std::size_t... I>
 void applyFunctionTupleToVector(const std::tuple<Funcs...>& funcs, const std::vector<T>& v, std::index_sequence<I...>) {
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-value"
+#endif
   std::initializer_list<int>{(std::get<I>(funcs)(v[I]), 0)...};
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 }
 
 template<typename... Funcs, typename T>
@@ -198,18 +205,30 @@ TEST_CASE("string") {
   }
   SECTION("escape sequences") {
     // REQUIRE has troubles with some string literals on VS
-    parse(R"("\n")", ast);
-    checkString("\n")(ast);
-    parse(R"("\t")", ast);
-    checkString("\t")(ast);
-    parse(R"("\^1")", ast);
-    checkString("\x1")(ast);
-    parse((boost::format(R"("\%|03|")") % +'0').str(), ast);
-    checkString("0")(ast);
-    parse(R"("\"")", ast);
-    checkString("\"")(ast);
-    parse(R"("\\")", ast);
-    checkString("\\")(ast);
+	SECTION("newline") {
+	  parse(R"("\n")", ast);
+	  checkString("\n")(ast);
+	}
+	SECTION("tab") {
+	  parse(R"("\t")", ast);
+	  checkString("\t")(ast);
+	}
+	SECTION("control") {
+      parse(R"("\^1")", ast);
+      checkString("\x1")(ast);
+	}
+	SECTION("ascii code") {
+	  parse((boost::format(R"("\%|03|")") % +'0').str(), ast);
+	  checkString("0")(ast);
+	}
+	SECTION("quote") {
+      parse(R"("\"")", ast);
+      checkString("\"")(ast);
+	}
+	SECTION("backslash") {
+	  parse(R"("\\")", ast);
+      checkString("\\")(ast);
+	}
   }
   SECTION("multi line") {
     parse(R"("abc\ 

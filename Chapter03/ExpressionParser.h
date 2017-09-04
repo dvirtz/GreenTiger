@@ -72,7 +72,7 @@ public:
 
     unaryExpression
       = primaryExpression
-      | '-' > unaryExpression
+      | ('-' > unaryExpression)
       ;
 
     multiplicativeExpression 

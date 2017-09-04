@@ -35,31 +35,34 @@ public:
 
     string
       = lit('"')
-      > skip(skipper.alias())[*(escapeCharacter | (char_ - '"'))]
+      > skip(skipper.alias())[*(escapeCharacter | controlCharacter | asciiCode | (char_ - '"'))]
       > '"';
 
-    escapeCharacter
-      %= lit('\\')
-      > (lit('n')[_val = '\n']                                                  // newline
-        | lit('t')[_val = '\t']                                                 // tab
-        | (lit('^') > uint_parser<char>()[_pass = phoenix::bind(iscntrl, _1)])  // control character
-        | uint_parser<char, 10, 1, 3>()                                         // ascii code
-        | char_('"')                                                            // double quote
-        | char_('\\')                                                           // backslash
-        )
-      ;
+    escapeCharacter.add("\\n", '\n')
+    		("\\t", '\t')
+			("\\\"", '\"')
+			("\\\\", '\\');
 
-    skipper = '\\' >> +space > '\\';
+    controlCharacter %= lit("\\^") > uint_parser<char>();//[_pass = phoenix::bind(iscntrl, _1)];
+
+    asciiCode = lit("\\") >> uint_parser<char, 10, 1, 3>();
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Woverloaded-shift-op-parentheses"
+#endif
+    skipper = lit("\\") >> +space > '\\';
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
     on_error<fail>(string,
       phoenix::bind(errorHandler, "Error! Expecting "s, _4, _3));
 
-//     on_success(string,
-//       phoenix::bind(annotation, _val, _1));
-
     BOOST_SPIRIT_DEBUG_NODES(
       (string)
-      (escapeCharacter)
+	  (controlCharacter)
+	  (asciiCode)
     )
   }
 
@@ -69,7 +72,11 @@ private:
 
   rule<ast::StringExpression()> string;
   // no skipping
-  boost::spirit::qi::rule<Iterator, char()> escapeCharacter;
+  //boost::spirit::qi::rule<Iterator, char()> escapeCharacter;
   boost::spirit::qi::rule<Iterator> skipper;
+  boost::spirit::qi::rule<Iterator, char()> controlCharacter;
+  boost::spirit::qi::rule<Iterator, char()> asciiCode;
+
+  boost::spirit::qi::symbols<const char, char> escapeCharacter;
 };
 } // namespace tiger
