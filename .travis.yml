@@ -1,24 +1,46 @@
 language: cpp
 
 sudo: false
-  
-os:
-  - osx
-  - linux
 
-compiler:
-  - gcc
-  - clang
-
-env:
-  matrix:
-    - BUILD_TYPE=Release
+addons:
+  apt:
+    packages:
+      ninja-build
+    
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      addons: {apt: {packages: [g++-6] , sources: [ubuntu-toolchain-r-test]}}
+      env:
+        - BUILD_TYPE=Release
+        - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+    - os: linux
+      compiler: clang
+      addons: {apt: {packages: [clang-3.9,llvm-3.9-dev,libstdc++-6-dev] , sources: [ubuntu-toolchain-r-test,llvm-toolchain-precise-3.9]}}
+      env: 
+        - BUILD_TYPE=Release 
+        - MATRIX_EVAL="CC=clang-3.9 && CXX=clang++-3.9"
+    - os: osx    
+      osx_image: xcode8.3
+      compiler: clang
+      env: 
+        - BUILD_TYPE=Release
+        - MATRIX_EVAL="CC=clang && CXX=clang++"
+    - os: osx
+      compiler: gcc
+      env: 
+        - BUILD_TYPE=Release
+        - MATRIX_EVAL="brew update && brew install gcc6 || brew link --overwrite gcc; CC=gcc && CXX=g++"
     
 cache:
   directories:
     - $HOME/.local
     - $HOME/.hunter
         
+before_install:
+  - eval "${MATRIX_EVAL}"
+  
 install:
   - |
     if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
@@ -38,6 +60,6 @@ install:
     fi
     
 script:
-  - cmake . -B_build -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+  - cmake . -B_build -DCMAKE_BUILD_TYPE=$BUILD_TYPE -G Ninja -DPOST_BUILD_TESTS=OFF
   - cmake --build _build
   - cmake --build _build --target test
