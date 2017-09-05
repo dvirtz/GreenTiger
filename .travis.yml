@@ -1,11 +1,6 @@
 language: cpp
 
 sudo: false
-
-addons:
-  apt:
-    packages:
-      ninja-build
     
 matrix:
   include:
@@ -60,6 +55,6 @@ install:
     fi
     
 script:
-  - cmake . -B_build -DCMAKE_BUILD_TYPE=$BUILD_TYPE -G Ninja -DPOST_BUILD_TESTS=OFF
+  - cmake . -B_build -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DPOST_BUILD_TESTS=OFF
   - cmake --build _build
   - cmake --build _build --target test
