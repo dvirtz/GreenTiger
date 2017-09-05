@@ -55,6 +55,6 @@ install:
     fi
     
 script:
-  - cmake . -B_build -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DPOST_BUILD_TESTS=OFF
+  - cmake . -B_build -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DPOST_BUILD_TESTS=OFF -DHUNTER_JOBS_NUMBER=8
   - cmake --build _build
   - cmake --build _build --target test
