@@ -18,10 +18,10 @@ cache:
 before_build:
   - if "%platform%"=="Win32" set CMAKE_GENERATOR_NAME=Visual Studio 15 2017
   - if "%platform%"=="x64"   set CMAKE_GENERATOR_NAME=Visual Studio 15 2017 Win64
-  - cmake . -B_build -G "%CMAKE_GENERATOR_NAME%" -T %TOOLSET%
+  - cmake . -B_build -G "%CMAKE_GENERATOR_NAME%" -T %TOOLSET% -DPOST_BUILD_TESTS=OFF
 
 build_script:
   - cmake --build _build --config %configuration%
-  
+
 test_script:
   - cmake --build _build --config %configuration% --target RUN_TESTS
