@@ -6,6 +6,7 @@
 #include <boost/optional.hpp>
 #include <string>
 #include <vector>
+#include <ostream>
 
 namespace tiger {
 
