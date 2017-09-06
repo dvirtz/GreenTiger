@@ -22,18 +22,19 @@ find_package(Catch CONFIG REQUIRED)
 
 enable_testing()
 
-function(parse_unit_tests target)
-    include(ParseAndAddCatchTests)
-    # abort on first failure
-    ParseAndAddCatchTests(${target} "-a")
+option(POST_BUILD_TESTS "Run tests on each target's post build step" TRUE)
 
-    include(ProcessorCount)
-    ProcessorCount(CORES)
-    set(CTEST_OPTIONS -C $<CONFIG> -L ${target})
+function(parse_unit_tests target)
+  include(ParseAndAddCatchTests)
+  # abort on first failure
+  ParseAndAddCatchTests(${target} "-a")
+
+  if (POST_BUILD_TESTS)
     add_custom_command(TARGET ${target}
-	    POST_BUILD
-		COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIG> -L ${target} --output-on-failure -j8
-	    COMMENT "Running ${target} unit tests")
+      POST_BUILD
+      COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIG> -L ${target} --output-on-failure -j8
+      COMMENT "Running ${target} unit tests")
+  endif()
 endfunction()
 
 add_subdirectory(include)
