@@ -5,28 +5,25 @@ sudo: false
 matrix:
   include:
     - os: linux
-      compiler: gcc
       addons: {apt: {packages: [g++-6] , sources: [ubuntu-toolchain-r-test]}}
       env:
         - BUILD_TYPE=Release
         - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
     - os: linux
-      compiler: clang
       addons: {apt: {packages: [clang-3.9,llvm-3.9-dev,libstdc++-6-dev] , sources: [ubuntu-toolchain-r-test,llvm-toolchain-precise-3.9]}}
       env: 
         - BUILD_TYPE=Release 
         - MATRIX_EVAL="CC=clang-3.9 && CXX=clang++-3.9"
     - os: osx    
       osx_image: xcode8.3
-      compiler: clang
       env: 
         - BUILD_TYPE=Release
         - MATRIX_EVAL="CC=clang && CXX=clang++"
     - os: osx
-      compiler: gcc
+      osx_image: xcode8.3
       env: 
         - BUILD_TYPE=Release
-        - MATRIX_EVAL="brew update && brew install gcc6 || brew link --overwrite gcc; CC=gcc && CXX=g++"
+        - MATRIX_EVAL="brew update && brew install gcc6 && CC=gcc-6 && CXX=g++-6"
     
 cache:
   directories:
