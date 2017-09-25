@@ -71,7 +71,7 @@ end
     REQUIRE(compile(R"(
 let
   type arr = array of int
-  var a : arr := nil
+  var a := arr[2] of 3
 in
   a[0]
 end
@@ -197,12 +197,47 @@ Catch::CompositeGenerator<T> values(T val, Ts... vals)
 }
 
 TEST_CASE("arithmetic comparison and boolean") {
-  SECTION("simple") {
-    auto operation = "|";// GENERATE(values("+", "-", "*", "/", "=", "<>", ">", "<", "<=", ">=", "&", "|"));
+  SECTION("integer") {
+    auto operation = GENERATE(values("+", "-", "*", "/", "=", "<>", ">", "<", "<=", ">=", "&", "|"));
     CAPTURE(operation);
     REQUIRE(compile(boost::str(boost::format(R"(
 let
   var i : int := 2 %1% 3
+in
+end
+)") % operation)));
+  }
+
+  SECTION("string") {
+    auto operation = GENERATE(values("=", "<>", ">", "<", "<=", ">="));
+    CAPTURE(operation);
+    REQUIRE(compile(boost::str(boost::format(R"(
+let
+  var i : int := "2" %1% "3"
+in
+end
+)") % operation)));
+  }
+
+  SECTION("array and record") {
+    auto operation = GENERATE(values("=", "<>"));
+    CAPTURE(operation);
+    REQUIRE(compile(boost::str(boost::format(R"(
+let
+  type t = {}
+  var i := t{}
+  var j := t{}
+  var k : int := i %1% j
+in
+end
+)") % operation)));    
+
+    REQUIRE(compile(boost::str(boost::format(R"(
+let
+  type t = array of int
+  var i := t[2] of 3
+  var j := i
+  var k : int := i %1% j
 in
 end
 )") % operation)));

@@ -50,9 +50,29 @@ public:
 
 private:
   template<typename T>
+  bool hasType(const NamedType& type) const
+  {
+    return boost::get<T>(&type.m_type) != nullptr;
+  }
+
+  template<typename T>
   bool hasType(const CompiledExpression& exp) const
   {
-    return boost::get<T>(&exp.m_type.m_type) != nullptr;
+    return hasType<T>(exp.m_type);
+  }
+
+  bool equalTypes(const NamedType& lhs, const NamedType& rhs) const
+  {
+    // nil can be converted to a record
+    return lhs.m_name == rhs.m_name
+      || (hasType<NilType>(lhs) && hasType<RecordType>(rhs))
+      || (hasType<RecordType>(lhs) && hasType<NilType>(rhs))
+      ;
+  }
+
+  bool equalTypes(const CompiledExpression& lhs, const CompiledExpression& rhs) const
+  {
+    return equalTypes(lhs.m_type, rhs.m_type);
   }
 
   size_t id(const ast::Expression& expression) const;
