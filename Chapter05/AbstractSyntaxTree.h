@@ -15,9 +15,9 @@ namespace ast {
 //  The AST
 ///////////////////////////////////////////////////////////////////////////
 struct Tagged {
-  int id; // Used to annotate the AST with the iterator position.
-          // This id is used as a key to a map<int, Iterator>
-          // (not really part of the AST.)
+  size_t id;  // Used to annotate the AST with the iterator position.
+              // This id is used as a key to a map<int, Iterator>
+              // (not really part of the AST.)
 };
 
 enum class Operation
@@ -41,10 +41,21 @@ struct Identifier : Tagged
   std::string name;
   // https://stackoverflow.com/a/19824426/621176
   boost::spirit::unused_type dummy;
+
+  operator std::string() const 
+  {
+    return name;
+  }
+
+  friend bool operator==(const Identifier& lhs, const Identifier& rhs)
+  {
+    return lhs.name == rhs.name;
+  }
 };
 
-struct IntExpression
+struct IntExpression : Tagged
 {
+  IntExpression(uint32_t val = 0) : i(val) {}
   uint32_t i;
 };
 
@@ -53,7 +64,7 @@ struct StringExpression : Tagged
   std::string s;
 };
 
-struct NilExpression {};
+struct NilExpression : Tagged {};
 struct VarExpression;
 struct CallExpression;
 struct ArithmeticExpression;
@@ -61,7 +72,7 @@ struct RecordExpression;
 struct AssignExpression;
 struct IfExpression;
 struct WhileExpression;
-struct BreakExpression {};
+struct BreakExpression : Tagged {};
 struct ForExpression;
 struct LetExpression;
 struct ArrayExpression;
@@ -99,7 +110,7 @@ using VarRestElement = boost::variant<VarField, Subscript>;
 
 using VarRest = std::vector<VarRestElement>;
 
-struct VarExpression
+struct VarExpression : Tagged
 {
   Identifier first;
   VarRest rest;
@@ -107,7 +118,7 @@ struct VarExpression
 
 using Expressions = std::vector<Expression>;
 
-struct CallExpression
+struct CallExpression : Tagged
 {
   Identifier func;
   Expressions args;
@@ -121,7 +132,7 @@ struct OperationExpression
 
 using OperationExpressions = std::vector<OperationExpression>;
 
-struct ArithmeticExpression
+struct ArithmeticExpression : Tagged
 {
   Expression first;
   OperationExpressions rest;
@@ -135,32 +146,32 @@ struct RecordField
 
 using RecordFields = std::vector<RecordField>;
 
-struct RecordExpression
+struct RecordExpression : Tagged
 {
   Identifier type;
   RecordFields fields;
 };
 
-struct AssignExpression
+struct AssignExpression : Tagged
 {
   VarExpression var;
   Expression exp;
 };
 
-struct IfExpression
+struct IfExpression : Tagged
 {
   Expression test;
   Expression thenExp;
-  Expression elseExp;
+  boost::optional<Expression> elseExp;
 };
 
-struct WhileExpression
+struct WhileExpression : Tagged
 {
   Expression test;
   Expression body;
 };
 
-struct ForExpression
+struct ForExpression : Tagged
 {
   Identifier var;
   Expression lo;
@@ -195,17 +206,17 @@ struct VarDeclaration
 
 struct NameType
 {
-  Identifier name;
+  Identifier type;
 };
 
 struct RecordType
 {
-  Fields record;
+  Fields fields;
 };
 
 struct ArrayType
 {
-  Identifier array;
+  Identifier type;
 };
 
 using Type = boost::variant<
@@ -230,20 +241,20 @@ using Declaration = boost::variant <
 
 using Declarations = std::vector<Declaration>;
 
-struct LetExpression
+struct LetExpression : Tagged
 {
   Declarations decs;
   Expressions body;
 };
 
-struct ArrayExpression
+struct ArrayExpression : Tagged
 {
   Identifier type;
   Expression size;
   Expression init;
 };
 
-struct ExpressionSequence
+struct ExpressionSequence : Tagged
 {
   Expressions exps;
 };
@@ -311,76 +322,78 @@ inline void simplifyTree(ast::Expression& ast) {
   match(ast)(
     [&](ast::VarExpression& e) { simplifyVar(e); },
     [&](ast::CallExpression& e) {
-      for (auto& ee : e.args) {
-        simplifyTree(ee);
-      }
-    },
-      [&](ast::ArithmeticExpression& e) {
-      simplifyTree(e.first);
-      if (e.rest.empty()) {
-        auto tmp = std::move(e.first);
-        ast = tmp;
-      }
-      else {
-        for (auto& ee : e.rest) {
-          simplifyTree(ee.exp);
-        }
-      }
-    },
-      [&](ast::RecordExpression& e) {
-      for (auto& ee : e.fields) {
+    for (auto& ee : e.args) {
+      simplifyTree(ee);
+    }
+  },
+    [&](ast::ArithmeticExpression& e) {
+    simplifyTree(e.first);
+    if (e.rest.empty()) {
+      auto tmp = std::move(e.first);
+      ast = tmp;
+    }
+    else {
+      for (auto& ee : e.rest) {
         simplifyTree(ee.exp);
       }
-    },
-      [&](ast::AssignExpression& e) { 
-      simplifyVar(e.var);
-      simplifyTree(e.exp);
-    },
-        [&](ast::IfExpression& e) { 
-      simplifyTree(e.test);
-      simplifyTree(e.thenExp);
-      simplifyTree(e.elseExp);
-    },
-        [&](ast::WhileExpression& e) { 
-      simplifyTree(e.test);
-      simplifyTree(e.body);
-    },
-        [&](ast::ForExpression& e) { 
-      simplifyTree(e.lo);
-      simplifyTree(e.hi);
-      simplifyTree(e.body);
-    },
-        [&](ast::LetExpression& e) { 
-      for (auto& dec : e.decs)
-      {
-        match(dec)(
-          [&](FunctionDeclarations& funcs) {
-            for (auto& func : funcs){
-              simplifyTree(func.body);
-            }
-          },
-          [&](VarDeclaration& var) {
-            simplifyTree(var.init);
-          },
-            noop
-          );
-      }
-      for (auto& ee : e.body)
-      {
-        simplifyTree(ee);
-      }
-    },
-        [&](ast::ArrayExpression& e) { 
-      simplifyTree(e.size);
-      simplifyTree(e.init);
-    },
-      [&](ast::ExpressionSequence& e) {
-      for (auto& ee : e.exps) {
-        simplifyTree(ee);
-      }
-    },
-      noop
+    }
+  },
+    [&](ast::RecordExpression& e) {
+    for (auto& ee : e.fields) {
+      simplifyTree(ee.exp);
+    }
+  },
+    [&](ast::AssignExpression& e) {
+    simplifyVar(e.var);
+    simplifyTree(e.exp);
+  },
+    [&](ast::IfExpression& e) {
+    simplifyTree(e.test);
+    simplifyTree(e.thenExp);
+    if (e.elseExp) {
+      simplifyTree(*e.elseExp);
+    }
+  },
+    [&](ast::WhileExpression& e) {
+    simplifyTree(e.test);
+    simplifyTree(e.body);
+  },
+    [&](ast::ForExpression& e) {
+    simplifyTree(e.lo);
+    simplifyTree(e.hi);
+    simplifyTree(e.body);
+  },
+    [&](ast::LetExpression& e) {
+    for (auto& dec : e.decs)
+    {
+      match(dec)(
+        [&](FunctionDeclarations& funcs) {
+        for (auto& func : funcs) {
+          simplifyTree(func.body);
+        }
+      },
+        [&](VarDeclaration& var) {
+        simplifyTree(var.init);
+      },
+        noop
         );
+    }
+    for (auto& ee : e.body)
+    {
+      simplifyTree(ee);
+    }
+  },
+    [&](ast::ArrayExpression& e) {
+    simplifyTree(e.size);
+    simplifyTree(e.init);
+  },
+    [&](ast::ExpressionSequence& e) {
+    for (auto& ee : e.exps) {
+      simplifyTree(ee);
+    }
+  },
+    noop
+    );
 }
 
 }; // namespace ast
@@ -395,7 +408,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 
 BOOST_FUSION_ADAPT_STRUCT(
   tiger::ast::NameType,
-  (tiger::ast::Identifier, name)
+  (tiger::ast::Identifier, type)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -406,12 +419,12 @@ BOOST_FUSION_ADAPT_STRUCT(
 
 BOOST_FUSION_ADAPT_STRUCT(
   tiger::ast::RecordType,
-  (tiger::ast::Fields, record)
+  (tiger::ast::Fields, fields)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
   tiger::ast::ArrayType,
-  (tiger::ast::Identifier, array)
+  (tiger::ast::Identifier, type)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
@@ -501,7 +514,7 @@ BOOST_FUSION_ADAPT_STRUCT(
   tiger::ast::IfExpression,
   (tiger::ast::Expression, test)
   (tiger::ast::Expression, thenExp)
-  (tiger::ast::Expression, elseExp)
+  (boost::optional<tiger::ast::Expression>, elseExp)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
