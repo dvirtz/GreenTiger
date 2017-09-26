@@ -44,7 +44,8 @@ Compiler::result_type Compiler::operator()(const ast::VarExpression & exp)
       if (it == record->m_fields.end()) {
         return m_errorHandler(vf.name.id, "Unknown record member " + vf.name.name);
       }
-      namedType = it->m_type;
+      auto tmp = std::move(it->m_type);
+      namedType = tmp;
       return true;
     },
       [&](const ast::Subscript& s)->bool {
@@ -59,7 +60,8 @@ Compiler::result_type Compiler::operator()(const ast::VarExpression & exp)
       if (!array) {
         return m_errorHandler(id(s.exp), "Expression must be of array type");
       }
-      namedType = array->m_elementType;
+      auto tmp = array->m_elementType;
+      namedType = tmp;
       return true;
     }
       )) {
@@ -592,6 +594,17 @@ bool Compiler::addToEnv(const ast::TypeDeclarations & decs)
     addToEnv(dec.name, NamedType{ dec.name, *type });
   }
 
+  // third pass, replace all recursive types with actual types
+  for (auto& it : m_environments.back().m_typeMap) {
+    if (auto recordType = boost::get<RecordType>(&it.second.m_type)) {
+      for (auto& field : recordType->m_fields) {
+        if (hasType<VoidType>(field.m_type)) {
+          field.m_type = *findType(field.m_type.m_name);
+        }
+      }
+    }
+  }
+
   return true;
 }
 
@@ -644,7 +657,7 @@ Compiler::Environment Compiler::defaultEnvironment()
   valueMap["flush"] = FunctionType{ s_voidType };
   valueMap["getchar"] = FunctionType{ s_stringType };
   valueMap["ord"] = FunctionType{ s_intType, {s_stringType} };
-  valueMap["char"] = FunctionType{ s_stringType, {s_intType} };
+  valueMap["chr"] = FunctionType{ s_stringType, {s_intType} };
   valueMap["size"] = FunctionType{ s_intType, {s_stringType} };
   valueMap["substring"] = FunctionType{ s_stringType, {s_stringType, s_intType, s_intType} };
   valueMap["concat"] = FunctionType{ s_stringType, {s_stringType, s_stringType} };

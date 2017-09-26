@@ -8,18 +8,18 @@
 using namespace tiger;
 using boost::get;
 
-TEST_CASE("parse test files", "[.]") {
+TEST_CASE("compile test files") {
   namespace fs = boost::filesystem;
   forEachTigerTest([](const fs::path &filepath, bool parseError, bool compilationError) {
-    auto filename = filepath.filename();
+    auto filename = filepath.string();
     CAPTURE(filename);
-    if (parseError)
+    if (parseError || compilationError)
     {
-      REQUIRE_FALSE(compileFile(filepath.string()));
+      REQUIRE_FALSE(compileFile(filename));
     }
     else
     {
-      REQUIRE(compileFile(filepath.string()));
+      REQUIRE(compileFile(filename));
     }
   });
 }
@@ -198,31 +198,34 @@ Catch::CompositeGenerator<T> values(T val, Ts... vals)
 
 TEST_CASE("arithmetic comparison and boolean") {
   SECTION("integer") {
-    auto operation = GENERATE(values("+", "-", "*", "/", "=", "<>", ">", "<", "<=", ">=", "&", "|"));
-    CAPTURE(operation);
-    REQUIRE(compile(boost::str(boost::format(R"(
-let
-  var i : int := 2 %1% 3
-in
-end
-)") % operation)));
+    for (auto operation : { "+", "-", "*", "/", "=", "<>", ">", "<", "<=", ">=", "&", "|" }) {
+      CAPTURE(operation);
+      REQUIRE(compile(boost::str(boost::format(R"(
+  let
+    var i : int := 2 %1% 3
+  in
+  end
+  )") % operation)));
+    }
   }
 
   SECTION("string") {
-    auto operation = GENERATE(values("=", "<>", ">", "<", "<=", ">="));
-    CAPTURE(operation);
-    REQUIRE(compile(boost::str(boost::format(R"(
-let
-  var i : int := "2" %1% "3"
-in
-end
-)") % operation)));
+    for (auto operation : { "=", "<>", ">", "<", "<=", ">=" }) {
+      CAPTURE(operation);
+      REQUIRE(compile(boost::str(boost::format(R"(
+  let
+    var i : int := "2" %1% "3"
+  in
+  end
+  )") % operation)));
+    }
   }
 
   SECTION("array and record") {
-    auto operation = GENERATE(values("=", "<>"));
-    CAPTURE(operation);
-    REQUIRE(compile(boost::str(boost::format(R"(
+    for (auto operation : { "=", "<>" })
+    {
+      CAPTURE(operation);
+      REQUIRE(compile(boost::str(boost::format(R"(
 let
   type t = {}
   var i := t{}
@@ -230,9 +233,9 @@ let
   var k : int := i %1% j
 in
 end
-)") % operation)));    
+)") % operation)));
 
-    REQUIRE(compile(boost::str(boost::format(R"(
+      REQUIRE(compile(boost::str(boost::format(R"(
 let
   type t = array of int
   var i := t[2] of 3
@@ -241,22 +244,25 @@ let
 in
 end
 )") % operation)));
+    }
   }
 
   SECTION("type mismatch") {
     SECTION("in expression") {
-      auto operation = GENERATE(values("+", "<>", "&"));
-      CAPTURE(operation);
-      REQUIRE_FALSE(compile("2<>\"3\""));
+      for (auto operation : { "+", "<>", "&" }) {
+        CAPTURE(operation);
+        REQUIRE_FALSE(compile("2<>\"3\""));
+      }
     }
     SECTION("in result") {
-      auto operation = GENERATE(values("*", "<=", "|"));
-      REQUIRE_FALSE(compile(boost::str(boost::format(R"(
-let
-  var i : string := 2 %1% 3
-in
-end
-)") % operation)));
+      for (auto operation : { "*", "<=", "|" }) {
+        REQUIRE_FALSE(compile(boost::str(boost::format(R"(
+  let
+    var i : string := 2 %1% 3
+  in
+  end
+  )") % operation)));
+      }
     }
   }
 }
