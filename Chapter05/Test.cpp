@@ -806,3 +806,77 @@ end
     }
   }
 }
+
+TEST_CASE("standard library")
+{
+  // function print(s : string)
+  REQUIRE(compile(R"(
+print("")
+)"));
+
+  // function flush()
+  REQUIRE(compile(R"(
+flush()
+)"));
+
+  // function getchar() : string
+  REQUIRE(compile(R"(
+let
+  var v : string := getchar()
+in
+end
+)"));
+
+  // function ord(s: string) : int
+  REQUIRE(compile(R"(
+let
+  var v : int := ord("")
+in
+end
+)"));
+
+  // function chr(i: int) : string
+  REQUIRE(compile(R"(
+let
+  var v : string := chr(0)
+in
+end
+)"));
+
+  // function size(s: string) : int
+  REQUIRE(compile(R"(
+let
+  var v : int := size("")
+in
+end
+)"));
+
+  // function substring(s:string, first:int, n:int) : string
+  REQUIRE(compile(R"(
+let
+  var v : string := substring("", 0, 0)
+in
+end
+)"));
+
+  // function concat(s1: string, s2: string) : string
+  REQUIRE(compile(R"(
+let
+  var v : string := concat("", "")
+in
+end
+)"));
+
+  // function not(i : integer) : integer
+  REQUIRE(compile(R"(
+let
+  var v : int := not(0)
+in
+end
+)"));
+
+  // function exit(i: int)
+  REQUIRE(compile(R"(
+exit(0)
+)"));
+}
