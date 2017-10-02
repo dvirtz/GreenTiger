@@ -562,7 +562,7 @@ bool Compiler::addToEnv(const ast::TypeDeclarations & decs)
         return m_errorHandler(dec.name.id, "Cyclic recursive deceleration");
       }
 
-      return NameType{ type->m_name };
+      return MatchRes{ NameType{ type->m_name } };
     },
       [&](const ast::ArrayType& arrayType)->MatchRes {
       auto type = findType(arrayType.type);
@@ -570,7 +570,7 @@ bool Compiler::addToEnv(const ast::TypeDeclarations & decs)
         return m_errorHandler(arrayType.type.id, "Undeclared type " + arrayType.type.name);
       }
 
-      return ArrayType{ *type };
+      return MatchRes{ ArrayType{ *type } };
     },
       [&](const ast::RecordType& recordType)->MatchRes {
       RecordType res;
@@ -583,7 +583,7 @@ bool Compiler::addToEnv(const ast::TypeDeclarations & decs)
         res.m_fields.push_back({ field.name, *type });
       }
 
-      return res;
+      return MatchRes{ res };
     }
     );
 
