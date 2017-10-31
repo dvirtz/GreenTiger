@@ -2,6 +2,7 @@
 #include "TempMap.h"
 #include <boost/dynamic_bitset_fwd.hpp>
 #include <boost/variant.hpp>
+#include <vector>
 
 namespace tiger
 {
