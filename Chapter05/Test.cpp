@@ -182,20 +182,6 @@ end
   }
 }
 
-template<typename T, typename... Ts>
-Catch::CompositeGenerator<T> values(T val, Ts... vals)
-{
-  using namespace Catch;
-  CompositeGenerator<T> generators;
-  ValuesGenerator<T>* valuesGen = new ValuesGenerator<T>();
-  valuesGen->add(val);
-  // fold expression abuse
-  // http://articles.emptycrate.com/2016/05/14/folds_in_cpp11_ish.html
-  std::initializer_list<int>{ (valuesGen->add(vals), 0)... };
-  generators.add(valuesGen);
-  return generators;
-}
-
 TEST_CASE("arithmetic comparison and boolean") {
   SECTION("integer") {
     for (auto operation : { "+", "-", "*", "/", "=", "<>", ">", "<", "<=", ">=", "&", "|" }) {
