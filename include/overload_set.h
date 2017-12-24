@@ -24,13 +24,13 @@ struct overload_set<Func, Funcs...> : Func, overload_set<Funcs...> {
       : Func(f), overload_set<Funcs...>(fs...) {}
 };
 
+} // namespace detail
+
 template <typename... Funcs>
 auto
 overload(Funcs &&... fs) {
-  using os = overload_set<typename std::remove_reference<Funcs>::type...>;
+  using os = detail::overload_set<typename std::remove_reference<Funcs>::type...>;
   return os(std::forward<Funcs>(fs)...);
 }
-
-} // namespace detail
 
 } // namespace helpers
