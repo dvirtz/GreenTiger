@@ -1,10 +1,12 @@
-#include "FrameFactory.h"
+#pragma once
+
+#include "../CallingConvention.h"
 
 namespace tiger {
-class x64FastCallFrameFactory : public FrameFactory
+class x64FastCallCallingConvention : public CallingConvention
 {
 public:
-  // Inherited via FrameFactory
+  // Inherited via CallingConvention
   virtual std::unique_ptr<Frame> createFrame(TempMap& tempMap, const Label& name, const BoolList & formals) override;
 
 };

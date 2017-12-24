@@ -1,16 +1,16 @@
 #include "Translator.h"
-#include "FrameFactory.h"
+#include "CallingConvention.h"
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
 
 namespace tiger
 {
 
-Translator::Translator(TempMap& tempMap, FrameFactory &frameFactory)
+Translator::Translator(TempMap& tempMap, CallingConvention &callingConvention)
   : m_tempMap(tempMap),
-  m_frameFactory(frameFactory)
+  m_callingConvention(callingConvention)
 {
-  m_frames.push_back(m_frameFactory.createFrame(m_tempMap, "start", BoolList{}));
+  m_frames.push_back(m_callingConvention.createFrame(m_tempMap, "start", BoolList{}));
 }
 
 tiger::Translator::Level Translator::outermost() const
@@ -24,7 +24,7 @@ tiger::Translator::Level Translator::newLevel(Level parent, Label label, const B
   BoolList withStaticLink = formals;
   withStaticLink.resize(withStaticLink.size() + 1);
   (withStaticLink <<= 1).set(0, true);
-  m_frames.push_back(m_frameFactory.createFrame(m_tempMap, label, withStaticLink));
+  m_frames.push_back(m_callingConvention.createFrame(m_tempMap, label, withStaticLink));
   return m_frames.size() - 1;
 }
 

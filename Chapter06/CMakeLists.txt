@@ -1,6 +1,8 @@
-set(SOURCES Program.cpp Test.cpp Compiler.cpp TempMap.cpp x64FastCallFrame.cpp EscapeAnalyser.cpp x64FastCallFrameFactory.cpp Translator.cpp)
+set(SOURCES Program.cpp Test.cpp Compiler.cpp TempMap.cpp EscapeAnalyser.cpp Translator.cpp)
 set(HEADERS Program.h ErrorHandler.h ExpressionParser.h Skipper.h IdentifierParser.h DeclerationParser.h AbstractSyntaxTree.h Annotation.h
-    StringParser.h Compiler.h Types.h TempMap.h Frame.h FrameFactory.h x64FastCallFrame.h EscapeAnalyser.h x64FastCallFrameFactory.h Translator.h)
+    StringParser.h Compiler.h Types.h TempMap.h Frame.h CallingConvention.h EscapeAnalyser.h Translator.h)
+list(APPEND SOURCES x64FastCall/Frame.cpp x64FastCall/CallingConvention.cpp)
+list(APPEND HEADERS x64FastCall/Frame.h x64FastCall/Frame.cpp)
 
 add_executable(Chapter06 ${HEADERS} ${SOURCES})
 

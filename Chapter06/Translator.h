@@ -3,13 +3,13 @@
 
 namespace tiger {
 
-class FrameFactory;
+class CallingConvention;
 
 class Translator {
 public:
   using Level = size_t;
 
-  Translator(TempMap &tempMap, FrameFactory &frameFactory);
+  Translator(TempMap &tempMap, CallingConvention &callingConvention);
 
   Level outermost() const;
   Level newLevel(Level parent, Label label, const BoolList &formals);
@@ -18,7 +18,7 @@ public:
 
 private:
   TempMap &m_tempMap;
-  FrameFactory &m_frameFactory;
+  CallingConvention &m_callingConvention;
   std::vector<std::unique_ptr<Frame>> m_frames;
 };
 } // namespace tiger

@@ -2,7 +2,7 @@
 #include "ExpressionParser.h"
 #include "Compiler.h"
 #include "EscapeAnalyser.h"
-#include "x64FastCallFrameFactory.h"
+#include "x64FastCall/CallingConvention.h"
 #include "Translator.h"
 #include <boost/spirit/include/classic_position_iterator.hpp>
 #include <boost/spirit/include/support_multi_pass.hpp>
@@ -27,9 +27,9 @@ bool compile(Iterator &first, const Iterator &last) {
   Grammer grammer(errorHandler, annotation);
   Skipper skipper;
   EscapeAnalyser escapeAnalyser;
-  x64FastCallFrameFactory frameFactory;
+  x64FastCallCallingConvention callingConvention;
   TempMap tempMap;
-  Translator translator(tempMap, frameFactory);
+  Translator translator(tempMap, callingConvention);
   Compiler compiler(errorHandler, annotation, tempMap, translator);
 
   ast::Expression ast;

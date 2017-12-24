@@ -1,5 +1,5 @@
 #include "Compiler.h"
-#include "FrameFactory.h"
+#include "CallingConvention.h"
 #include "variantMatch.h"
 #include <boost/dynamic_bitset.hpp>
 
@@ -189,11 +189,9 @@ Compiler::result_type Compiler::compile(Translator::Level level,
       return m_errorHandler(id(opExp.exp),
                             "Both operands must have the same type");
     }
-
-    return CompiledExpression{s_intType};
   }
 
-  return {};
+  return CompiledExpression{ s_intType };
 }
 
 Compiler::result_type Compiler::compile(Translator::Level level,

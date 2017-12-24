@@ -1,4 +1,6 @@
-#include "Frame.h"
+#pragma once
+
+#include "../Frame.h"
 
 namespace tiger {
 namespace x64FastCall {
