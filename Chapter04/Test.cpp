@@ -1,13 +1,17 @@
 #include "Program.h"
 #include "testsHelper.h"
 #include "AbstractSyntaxTree.h"
+#include "vectorApply.h"
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 #include <boost/variant/get.hpp>
 #include <boost/format.hpp>
+#include <boost/optional/optional_io.hpp>
 
 using namespace tiger;
 using boost::get;
+using helpers::applyFunctionsToVector;
+using helpers::applyFunctionTupleToVector;
 
 TEST_CASE("parse test files") {
   namespace fs = boost::filesystem;
@@ -26,24 +30,6 @@ TEST_CASE("parse test files") {
   });
 }
 
-template<typename... Funcs, typename T, std::size_t... I>
-void applyFunctionTupleToVector(const std::tuple<Funcs...>& funcs, const std::vector<T>& v, std::index_sequence<I...>) {
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-value"
-#endif
-  std::initializer_list<int>{(std::get<I>(funcs)(v[I]), 0)...};
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-}
-
-template<typename... Funcs, typename T>
-void applyFunctionTupleToVector(const std::tuple<Funcs...>& funcs, const std::vector<T>& v) {
-  REQUIRE(sizeof...(Funcs) == v.size());
-  applyFunctionTupleToVector(funcs, v, std::make_index_sequence<sizeof...(Funcs)>());
-}
-
 auto checkIdentifier(const std::string& name)
 {
   return [name](const ast::Identifier& id)
@@ -60,7 +46,7 @@ auto checkLValue(const std::string& identifier, CheckRest&&... checkRest)
     auto pVar = get<ast::VarExpression>(&ast);
     REQUIRE(pVar);
     checkIdentifier(identifier)(pVar->first);
-    applyFunctionTupleToVector(std::forward_as_tuple(checkRest...), pVar->rest);
+    applyFunctionsToVector(pVar->rest, std::forward<CheckRest>(checkRest)...);
   };
 }
 
@@ -122,7 +108,7 @@ auto checkSequence(CheckExps&&... checkExps)
   {
     auto pSequence = get<ast::ExpressionSequence>(&ast);
     REQUIRE(pSequence);
-    applyFunctionTupleToVector(std::forward_as_tuple(checkExps...), pSequence->exps);
+    applyFunctionsToVector(pSequence->exps, std::forward<CheckExps>(checkExps)...);
   };
 }
 
@@ -163,7 +149,7 @@ auto checkArithmetic(CheckLhs&& checkLhs, CheckOps&&... checkOps)
     auto pArithmetic = get<ast::ArithmeticExpression>(&ast);
     REQUIRE(pArithmetic);
     checkLhs(pArithmetic->first);
-    applyFunctionTupleToVector(std::forward_as_tuple(checkOps...), pArithmetic->rest);
+    applyFunctionsToVector(pArithmetic->rest, std::forward<CheckOps>(checkOps)...);
   };
 };
 
@@ -249,7 +235,7 @@ auto checkFunctionCall(const std::string& func, CheckArgs&&... checkArgs)
     auto pCall = get<ast::CallExpression>(&ast);
     REQUIRE(pCall);
     checkIdentifier(func)(pCall->func);
-    applyFunctionTupleToVector(std::forward_as_tuple(checkArgs...), pCall->args);
+    applyFunctionsToVector(pCall->args, std::forward<CheckArgs>(checkArgs)...);
   };
 }
 
@@ -482,7 +468,7 @@ auto checkRecord(const std::string& type, CheckFields&&... checkFields)
     auto pRecord = get<ast::RecordExpression>(&ast);
     REQUIRE(pRecord);
     checkIdentifier(type)(pRecord->type);
-    applyFunctionTupleToVector(std::forward_as_tuple(checkFields...), pRecord->fields);
+    applyFunctionsToVector(pRecord->fields, std::forward<CheckFields>(checkFields)...);
   };
 }
 
@@ -929,19 +915,19 @@ auto checkLet(const std::tuple<CheckDecls...>& checkDecls, const std::tuple<Chec
     {
       auto pLet = get<ast::LetExpression>(&ast);
       REQUIRE(pLet);
-      applyFunctionTupleToVector(checkDecls, pLet->decs);
-      applyFunctionTupleToVector(checkExps, pLet->body);
+      applyFunctionTupleToVector(pLet->decs, checkDecls);
+      applyFunctionTupleToVector(pLet->body, checkExps);
     };
 }
 
 template<typename... CheckFuncDecls>
 auto checkFunctionDeclarations(CheckFuncDecls&&... checkFuncDecls)
 {
-  return [=](const ast::Declaration& decl)
+  return [&](const ast::Declaration& decl)
   {
     auto pFunctionDeclarations = get<ast::FunctionDeclarations>(&decl);
     REQUIRE(pFunctionDeclarations);
-    applyFunctionTupleToVector(std::forward_as_tuple(checkFuncDecls...), *pFunctionDeclarations);
+    applyFunctionsToVector(*pFunctionDeclarations, std::forward<CheckFuncDecls>(checkFuncDecls)...);
   };
 }
 
@@ -968,18 +954,18 @@ auto checkVarDeclaration(const std::string& name, CheckInit&& checkInit, const b
 template<typename... CheckTypeDecls>
 auto checkTypeDeclarations(CheckTypeDecls&&... checkTypeDecls)
 {
-  return [=](const ast::Declaration& decl)
+  return [&](const ast::Declaration& decl)
   {
     auto pTypeDeclarations = get<ast::TypeDeclarations>(&decl);
     REQUIRE(pTypeDeclarations);
-    applyFunctionTupleToVector(std::forward_as_tuple(checkTypeDecls...), *pTypeDeclarations);
+    applyFunctionsToVector(*pTypeDeclarations, std::forward<CheckTypeDecls>(checkTypeDecls)...);
   };
 }
 
 template<typename CheckBody, typename... CheckParams>
 auto checkFunctionDeclaration(const std::string& name, const boost::optional<std::string>& result, CheckBody&& checkBody, CheckParams&&... checkParams)
 {
-  return [=](const ast::FunctionDeclaration& funcDecl)
+  return [&, result](const ast::FunctionDeclaration& funcDecl)
   {
     checkIdentifier(name)(funcDecl.name);
     if (result)
@@ -991,7 +977,7 @@ auto checkFunctionDeclaration(const std::string& name, const boost::optional<std
     {
       REQUIRE_FALSE(funcDecl.result);
     }
-    applyFunctionTupleToVector(std::forward_as_tuple(checkParams...), funcDecl.params);
+    applyFunctionsToVector(funcDecl.params, std::forward<CheckParams>(checkParams)...);
     checkBody(funcDecl.body);
   };
 }
@@ -1025,11 +1011,11 @@ auto checkNameType(const std::string& name)
 template<typename... CheckFields>
 auto checkRecordType(CheckFields&&... checkFields)
 {
-  return [=](const ast::Type& type)
+  return [&](const ast::Type& type)
   {
     auto pRecordType = get<ast::RecordType>(&type);
     REQUIRE(pRecordType);
-    applyFunctionTupleToVector(std::forward_as_tuple(checkFields...), pRecordType->record);
+    applyFunctionsToVector(pRecordType->record, std::forward<CheckFields>(checkFields)...);
   };
 }
 
