@@ -180,11 +180,9 @@ Compiler::result_type Compiler::operator()(const ast::ArithmeticExpression & exp
     if (!equalTypes(*rhs, *lhs)) {
       return m_errorHandler(id(opExp.exp), "Both operands must have the same type");
     }
-
-    return CompiledExpression{ s_intType };
   }
 
-  return {};
+  return CompiledExpression{ s_intType };
 }
 
 Compiler::result_type Compiler::operator()(const ast::RecordExpression & exp)
