@@ -249,13 +249,19 @@ struct ExpressionSequence
 };
 
 // print functions for debugging
+inline std::ostream& operator<<(std::ostream& out, const Identifier id)
+{
+  return out << id.name;
+}
+
 inline std::ostream& operator<<(std::ostream& out, BreakExpression)
 {
-  out << "break"; return out;
+  return out << "break";
 }
+
 inline std::ostream& operator<<(std::ostream& out, NilExpression)
 {
-  out << "nil"; return out;
+  return out << "nil";
 }
 
 inline std::ostream& operator<<(std::ostream& out, Operation op)
