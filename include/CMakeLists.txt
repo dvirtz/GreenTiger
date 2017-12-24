@@ -1,4 +1,4 @@
-set(HEADERS testsHelper.h.in overload_set.h variantMatch.h fusionAccumulate.h vectorApply.h)
+set(HEADERS testsHelper.h.in overload_set.h variantMatch.h fusionAccumulate.h strong_typedef.h vectorApply.h)
 
 add_custom_target(include SOURCES ${HEADERS})
 
