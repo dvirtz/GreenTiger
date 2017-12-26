@@ -2,6 +2,7 @@
 #include "testsHelper.h"
 #include "vectorApply.h"
 #include "x64FastCall/Registers.h"
+#include "x64FastCall/Frame.h"
 #define CATCH_CONFIG_MAIN
 #include <boost/format.hpp>
 #include <boost/optional/optional_io.hpp>
@@ -29,7 +30,7 @@ TEST_CASE("compile test files") {
 using boost::get;
 using helpers::applyFunctionsToVector;
 
-enum { WORD_SIZE = 4 };
+enum { WORD_SIZE = tiger::frame::x64FastCall::Frame::WORD_SIZE };
 
 template <typename T> void setOrCheck(boost::optional<T> &op, T val) {
   if (op) {

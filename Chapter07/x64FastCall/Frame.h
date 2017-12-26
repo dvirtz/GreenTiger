@@ -11,7 +11,7 @@ namespace x64FastCall {
 // https://docs.microsoft.com/en-gb/cpp/build/overview-of-x64-calling-conventions
 class Frame : public frame::Frame {
 public:
-  static const int WORD_SIZE = 4;
+  static const int WORD_SIZE = 8;
 
   Frame(temp::Map &tempMap, const temp::Label &name, const BoolList &formals);
   
