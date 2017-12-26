@@ -23,7 +23,7 @@ matrix:
       osx_image: xcode8.3
       env: 
         - BUILD_TYPE=Release
-        - MATRIX_EVAL="brew install gcc6 && CC=gcc-6 && CXX=g++-6"
+        - MATRIX_EVAL="brew cask uninstall oclint && brew install gcc6 && CC=gcc-6 && CXX=g++-6"
     
 cache:
   directories:
