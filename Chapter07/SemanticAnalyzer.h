@@ -80,7 +80,8 @@ private:
     NamedType m_resultType;
     std::vector<NamedType> m_parameterTypes;
     temp::Label m_label;
-    translator::Level m_level;
+    translator::Level m_declerationLevel;
+    translator::Level m_bodyLevel;
   };
 
   using ValueType = boost::variant<VariableType, FunctionType>;

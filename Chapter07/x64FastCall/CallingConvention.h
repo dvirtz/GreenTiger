@@ -5,7 +5,7 @@
 namespace tiger {
 namespace frame {
 namespace x64FastCall {
-class CallingConvention : public frame::CallingConvention {
+class CallingConvention final : public frame::CallingConvention {
 public:
   CallingConvention(temp::Map &tempMap);
 

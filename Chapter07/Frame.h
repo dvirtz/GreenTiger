@@ -31,7 +31,7 @@ public:
   virtual ~Frame() noexcept = default;
 
   virtual temp::Label name() const = 0;
-  virtual AccessList formals() const = 0;
+  virtual const AccessList &formals() const = 0;
   virtual VariableAccess allocateLocal(bool escapes) = 0;
   virtual ir::Statement procEntryExit1(const ir::Statement& body) = 0;
 protected:

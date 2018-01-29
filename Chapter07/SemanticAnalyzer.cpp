@@ -63,7 +63,8 @@ SemanticAnalyzer::compileExpression(const ast::VarExpression &exp) {
 
               // since each member is a scalar this is the same as array access
               translatedExp = m_translator.translateArrayAccess(
-                  translatedExp, std::distance(record->m_fields.begin(), it));
+                  translatedExp, static_cast<int>(std::distance(
+                                     record->m_fields.begin(), it)));
 
               auto tmp = std::move(it->m_type);
               namedType = tmp;
@@ -146,7 +147,7 @@ SemanticAnalyzer::compileExpression(const ast::CallExpression &exp) {
 
   return CompiledExpression{
       func->m_resultType,
-      m_translator.translateCall(m_functionLevels, func->m_label, func->m_level,
+      m_translator.translateCall(m_functionLevels, func->m_label, func->m_declerationLevel,
                                  translatedArgs)};
 }
 
@@ -368,7 +369,8 @@ SemanticAnalyzer::compileExpression(const ast::ForExpression &exp) {
     m_errorHandler(id(exp.hi), "Expression must be of type int");
   }
 
-  VariableType forVar{ s_intType, m_translator.allocateLocal(m_functionLevels.back(), exp.escapes) };
+  VariableType forVar{s_intType, m_translator.allocateLocal(
+                                     m_functionLevels.back(), exp.escapes)};
 
   m_environments.emplace_back();
   addToEnv(exp.var, forVar);
@@ -383,10 +385,12 @@ SemanticAnalyzer::compileExpression(const ast::ForExpression &exp) {
     m_errorHandler(id(exp.body), "Expression must produce no value");
   }
 
-  CompiledExpression res{s_voidType,
-                         m_translator.translateForLoop(
-                             fromExp.m_translated, toExp.m_translated,
-                             bodyExp.m_translated, m_breakTargets.back())};
+  CompiledExpression res{
+      s_voidType,
+      m_translator.translateForLoop(
+          m_translator.translateVar(m_functionLevels, forVar.m_access),
+          fromExp.m_translated, toExp.m_translated, bodyExp.m_translated,
+          m_breakTargets.back())};
 
   m_breakTargets.pop_back();
 
@@ -459,8 +463,7 @@ SemanticAnalyzer::compileExpression(const ast::ExpressionSequence &exp) {
                    return compiled.m_translated;
                  });
 
-  switch (translated.size())
-  {
+  switch (translated.size()) {
   case 0:
     break;
   case 1:
@@ -470,7 +473,7 @@ SemanticAnalyzer::compileExpression(const ast::ExpressionSequence &exp) {
     // translated same as let with no declarations
     res.m_translated = m_translator.translateLet({}, translated);
     break;
-  }    
+  }
 
   return res;
 }
@@ -504,14 +507,12 @@ SemanticAnalyzer::addToEnv(const ast::FunctionDeclarations &decs) {
     }
 
     function.m_label = m_tempMap.newLabel();
-    m_functionLevels.push_back(
-        m_translator.newLevel(function.m_label, formals));
-    function.m_level = m_functionLevels.back();
+    function.m_declerationLevel = m_functionLevels.back();
+    function.m_bodyLevel = m_translator.newLevel(function.m_label, formals);
     addToEnv(dec.name, function);
   }
 
   // second pass, compile function bodies
-  std::vector<std::pair<temp::Label, translator::Expression>> functions;
   for (const auto &dec : decs) {
     auto function = findValue(dec.name);
     assert(function);
@@ -520,24 +521,28 @@ SemanticAnalyzer::addToEnv(const ast::FunctionDeclarations &decs) {
     assert(funcType);
 
     m_environments.emplace_back();
+    m_functionLevels.push_back(funcType->m_bodyLevel);
 
-    auto formals = m_translator.formals(funcType->m_level);
+    auto formals = m_translator.formals(funcType->m_bodyLevel);
     for (size_t i = 0; i < dec.params.size(); ++i) {
-      addToEnv(dec.params[i].name, VariableType{funcType->m_parameterTypes[i], formals[i + 1]});
+      addToEnv(dec.params[i].name,
+               VariableType{funcType->m_parameterTypes[i], formals[i + 1]});
     }
 
     auto compiled = compileExpression(dec.body);
-    functions.emplace_back(funcType->m_label, compiled.m_translated);
 
+    m_functionLevels.pop_back();
     m_environments.pop_back();
 
     if (!equalTypes(compiled.m_type, funcType->m_resultType)) {
       m_errorHandler(id(dec.body), "Function body type must be " +
                                        funcType->m_resultType.m_name);
     }
+
+    m_translator.translateFunction(funcType->m_bodyLevel, funcType->m_label, compiled.m_translated);
   }
 
-  return m_translator.translateFunctions(m_functionLevels.back(), functions);
+  return {};
 }
 
 SemanticAnalyzer::CompiledDeclaration
@@ -649,7 +654,8 @@ SemanticAnalyzer::addToEnv(const ast::TypeDeclarations &decs) {
 
 SemanticAnalyzer::CompiledDeclaration
 SemanticAnalyzer::addToEnv(const ast::Declaration &dec) {
-  return helpers::match(dec)([&](const auto &decs) { return this->addToEnv(decs); });
+  return helpers::match(dec)(
+      [&](const auto &decs) { return this->addToEnv(decs); });
 }
 
 void SemanticAnalyzer::addToEnv(const TypeMap::key_type &name,

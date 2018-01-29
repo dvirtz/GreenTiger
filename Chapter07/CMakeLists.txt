@@ -1,6 +1,7 @@
 set(SOURCES Program.cpp Test.cpp SemanticAnalyzer.cpp TempMap.cpp EscapeAnalyser.cpp Translator.cpp Tree.cpp)
 set(HEADERS Program.h ErrorHandler.h ExpressionParser.h Skipper.h IdentifierParser.h DeclerationParser.h AbstractSyntaxTree.h 
-  Annotation.h StringParser.h SemanticAnalyzer.h Types.h TempMap.h Frame.h CallingConvention.h EscapeAnalyser.h Translator.h Tree.h)
+  Annotation.h StringParser.h SemanticAnalyzer.h Types.h TempMap.h Frame.h CallingConvention.h EscapeAnalyser.h Translator.h Tree.h
+  Fragment.h)
 list(APPEND SOURCES x64FastCall/Frame.cpp x64FastCall/CallingConvention.cpp)
 list(APPEND HEADERS x64FastCall/Frame.h x64FastCall/Frame.cpp)
 

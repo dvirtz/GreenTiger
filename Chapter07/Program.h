@@ -1,13 +1,17 @@
 #pragma once
+#include "Fragment.h"
 #include "Tree.h"
-#include <string>
 #include <boost/optional/optional_fwd.hpp>
+#include <string>
 
-namespace tiger 
-{
+namespace tiger {
 
-boost::optional<ir::Expression> compileFile(const std::string &filename);
+using CompileResult = boost::optional<std::pair<ir::Expression, FragmentList>>;
 
-boost::optional<ir::Expression> compile(const std::string &string);
+CompileResult compileFile(const std::string &filename);
+
+CompileResult compile(const std::string &string);
+
+std::ostream& operator<<(std::ostream& ost, std::pair<ir::Expression, FragmentList> const &compileResult);
 
 } // namespace tiger

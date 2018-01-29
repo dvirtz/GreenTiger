@@ -182,20 +182,24 @@ Expression Translator::translateConstant(int value) {
 Expression Translator::translateString(const std::string &value) {
   auto lab = m_tempMap.newLabel();
   m_callingConvention.allocateString(lab, value);
+  m_fragments.emplace_back(StringFragment{lab, value});
   return ir::Expression{lab};
 }
 
 Expression Translator::translateRecord(const std::vector<Expression> &fields) {
   auto r = m_tempMap.newTemp();
   ir::Sequence res;
-  res.statements.emplace_back(
-      ir::Move{r, m_callingConvention.externalCall(
-                      "malloc", {ir::Expression{m_wordSize * fields.size()}})});
+  res.statements.emplace_back(ir::Move{
+      r, m_callingConvention.externalCall(
+             "malloc",
+             {ir::Expression{static_cast<int>(m_wordSize * fields.size())}})});
   for (const auto &field : fields) {
     auto address = ir::BinaryOperation{
         ir::BinOp::PLUS, r,
-        ir::BinaryOperation{ir::BinOp::MUL,
-                            std::distance(fields.data(), &field), m_wordSize}};
+        ir::BinaryOperation{
+            ir::BinOp::MUL,
+            static_cast<int>(std::distance(fields.data(), &field)),
+            m_wordSize}};
     res.statements.emplace_back(
         ir::Move{ir::MemoryAccess{address}, toExpression(field)});
   }
@@ -232,23 +236,25 @@ Expression Translator::translateBreak(const temp::Label &loopDone) {
   return ir::Jump{loopDone};
 }
 
-Expression Translator::translateForLoop(const Expression &from,
+Expression Translator::translateForLoop(const Expression &var,
+                                        const Expression &from,
                                         const Expression &to,
                                         const Expression &body,
                                         const temp::Label &loopDone) {
-  auto i = m_tempMap.newTemp();
   auto limit = m_tempMap.newTemp();
   auto loopStart = m_tempMap.newLabel();
 
+  auto counter = toExpression(var);
+
   return ir::Sequence{
-      ir::Move{i, toExpression(from)},
+      ir::Move{counter, toExpression(from)},
       ir::Move{limit, toExpression(to)},
-      ir::ConditionalJump{ir::RelOp::GT, i, limit,
+      ir::ConditionalJump{ir::RelOp::GT, counter, limit,
                           std::make_shared<temp::Label>(loopDone)},
       loopStart,
       toStatement(body),
-      ir::Move{i, ir::BinaryOperation{ir::BinOp::PLUS, i, 1}},
-      ir::ConditionalJump{ir::RelOp::LT, i, limit,
+      ir::Move{counter, ir::BinaryOperation{ir::BinOp::PLUS, counter, 1}},
+      ir::ConditionalJump{ir::RelOp::LT, counter, limit,
                           std::make_shared<temp::Label>(loopStart)},
       loopDone};
 }
@@ -294,21 +300,12 @@ Expression Translator::translateLet(const std::vector<Expression> &declarations,
   return res;
 }
 
-Expression Translator::translateFunctions(
-    Level level,
-    const std::vector<std::pair<temp::Label, Expression>> &functions) {
-  ir::Sequence res;
-  res.statements.reserve(functions.size());
-  std::transform(
-      functions.begin(), functions.end(), std::back_inserter(res.statements),
-      [ this, &frame = *m_frames[level] ](
-          const std::pair<temp::Label, Expression> &func) {
-        ir::Move augmentedBody{m_callingConvention.returnValue(),
-                               toExpression(func.second)};
-        return ir::Sequence{func.first, frame.procEntryExit1(augmentedBody)};
-      });
-
-  return res;
+void Translator::translateFunction(Level level, const temp::Label &label,
+                                   const Expression &body) {
+  auto &frame = m_frames[level];
+  auto augmentedBody = frame->procEntryExit1(ir::Sequence{
+      label, ir::Move{m_callingConvention.returnValue(), toExpression(body)}});
+  m_fragments.emplace_back(FunctionFragment{augmentedBody, frame});
 }
 
 Expression Translator::translateAssignment(const Expression &var,
@@ -316,6 +313,8 @@ Expression Translator::translateAssignment(const Expression &var,
   auto varExp = toExpression(var);
   return ir::Move{varExp, toExpression(exp)};
 }
+
+FragmentList Translator::result() const { return m_fragments; }
 
 void Translator::doPatch(const PatchList &patchList, const temp::Label &label) {
   for (temp::Label &patch : patchList) {

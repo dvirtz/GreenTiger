@@ -9,7 +9,7 @@ namespace frame {
 namespace x64FastCall {
 // implements
 // https://docs.microsoft.com/en-gb/cpp/build/overview-of-x64-calling-conventions
-class Frame : public frame::Frame {
+class Frame final : public frame::Frame {
 public:
   static const int WORD_SIZE = 8;
 
@@ -18,7 +18,7 @@ public:
   // Inherited via Frame
   virtual temp::Label name() const override;
 
-  virtual AccessList formals() const override;
+  virtual const AccessList &formals() const override;
 
   virtual VariableAccess allocateLocal(bool escapes) override;
 

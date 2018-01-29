@@ -16,7 +16,7 @@ namespace qi = spirit::qi;
 namespace detail {
 
 template <typename Iterator>
-boost::optional<ir::Expression> compile(Iterator &first, const Iterator &last) {
+CompileResult compile(Iterator &first, const Iterator &last) {
   using Grammer = ExpressionParser<Iterator>;
   using Skipper = Skipper<Iterator>;
   using ErrorHandler = ErrorHandler<Iterator>;
@@ -47,7 +47,7 @@ boost::optional<ir::Expression> compile(Iterator &first, const Iterator &last) {
 #endif
 
     escapeAnalyser.analyse(ast);
-    return semanticAnalyzer.compile(ast);
+    return { { semanticAnalyzer.compile(ast), translator.result() } };
   }
 
     errorHandler("Parsing failed", "", first);
@@ -60,7 +60,7 @@ boost::optional<ir::Expression> compile(Iterator &first, const Iterator &last) {
 }
 } // namespace detail
 
-boost::optional<ir::Expression> compileFile(const std::string &filename) {
+CompileResult compileFile(const std::string &filename) {
   std::ifstream inputFile(filename, std::ios::in);
   if (!inputFile) {
     std::cerr << "failed to read from " << filename << "\n";
@@ -78,7 +78,7 @@ boost::optional<ir::Expression> compileFile(const std::string &filename) {
   return detail::compile(first, last);
 }
 
-boost::optional<ir::Expression> compile(const std::string &string) {
+CompileResult compile(const std::string &string) {
   using ForwardIterator = std::string::const_iterator;
   using Iterator = spirit::classic::position_iterator2<ForwardIterator>;
 
@@ -87,6 +87,11 @@ boost::optional<ir::Expression> compile(const std::string &string) {
   Iterator last;
 
   return detail::compile(first, last);
+}
+
+std::ostream& operator<<(std::ostream& ost, std::pair<ir::Expression, FragmentList> const &compileResult)
+{
+  return ost << compileResult.first;
 }
 
 } // namespace tiger

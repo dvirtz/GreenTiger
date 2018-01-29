@@ -17,6 +17,10 @@ template <typename T> struct strong_typedef {
     return lhs.m_val == rhs.m_val;
   }
 
+  friend bool operator==(const strong_typedef &lhs, const T &rhs) {
+    return lhs.m_val == rhs;
+  }
+
 private:
   T m_val;
 };

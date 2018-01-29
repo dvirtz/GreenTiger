@@ -1,4 +1,5 @@
 #pragma once
+#include "Fragment.h"
 #include "Frame.h"
 #include "Tree.h"
 #include <boost/optional.hpp>
@@ -74,8 +75,8 @@ public:
 
   Expression translateBreak(const temp::Label &loopDone);
 
-  Expression translateForLoop(const Expression &from, const Expression &to,
-                              const Expression &body,
+  Expression translateForLoop(const Expression &var, const Expression &from,
+                              const Expression &to, const Expression &body,
                               const temp::Label &loopDone);
 
   Expression translateCall(const std::vector<Level> &nestingLevels,
@@ -89,10 +90,12 @@ public:
   Expression translateLet(const std::vector<Expression> &declarations,
                           const std::vector<Expression> &body);
 
-  Expression translateFunctions(Level level,
-      const std::vector<std::pair<temp::Label, Expression>> &functions);
+  void translateFunction(Level level, const temp::Label &label,
+                         const Expression &body);
 
-  Expression translateAssignment(const Expression& var, const Expression& exp);
+  Expression translateAssignment(const Expression &var, const Expression &exp);
+
+  FragmentList result() const;
 
 private:
   void doPatch(const PatchList &patchList, const temp::Label &label);
@@ -102,7 +105,8 @@ private:
 
   temp::Map &m_tempMap;
   frame::CallingConvention &m_callingConvention;
-  std::vector<std::unique_ptr<frame::Frame>> m_frames;
+  std::vector<std::shared_ptr<frame::Frame>> m_frames;
+  FragmentList m_fragments;
   const int m_wordSize;
   Level m_outermost;
 };

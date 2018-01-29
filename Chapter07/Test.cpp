@@ -1,8 +1,8 @@
 #include "Program.h"
 #include "testsHelper.h"
 #include "vectorApply.h"
-#include "x64FastCall/Registers.h"
 #include "x64FastCall/Frame.h"
+#include "x64FastCall/Registers.h"
 #define CATCH_CONFIG_MAIN
 #include <boost/format.hpp>
 #include <boost/optional/optional_io.hpp>
@@ -10,6 +10,7 @@
 #include <catch.hpp>
 
 using namespace tiger;
+using namespace tiger::frame::x64FastCall;
 using OptReg = boost::optional<temp::Register>;
 using OptLabel = boost::optional<temp::Label>;
 
@@ -29,8 +30,9 @@ TEST_CASE("compile test files") {
 
 using boost::get;
 using helpers::applyFunctionsToVector;
+using helpers::applyFunctionTupleToVector;
 
-enum { WORD_SIZE = tiger::frame::x64FastCall::Frame::WORD_SIZE };
+enum { WORD_SIZE = Frame::WORD_SIZE };
 
 template <typename T> void setOrCheck(boost::optional<T> &op, T val) {
   if (op) {
@@ -40,7 +42,8 @@ template <typename T> void setOrCheck(boost::optional<T> &op, T val) {
   }
 }
 
-ir::Expression checkedCompile(const std::string &string) {
+std::pair<ir::Expression, FragmentList>
+checkedCompile(const std::string &string) {
   auto res = tiger::compile(string);
   REQUIRE(res);
   return *res;
@@ -49,10 +52,9 @@ ir::Expression checkedCompile(const std::string &string) {
 template <typename CheckStatement, typename CheckExpression>
 auto checkExpressionSequence(CheckStatement &&checkStatement,
                              CheckExpression &&checkExpression) {
-  return [
-    checkStatement = std::forward<CheckStatement>(checkStatement),
-    checkExpression = std::forward<CheckExpression>(checkExpression)
-  ](const ir::Expression &exp) {
+  return [checkStatement = std::forward<CheckStatement>(checkStatement),
+          checkExpression = std::forward<CheckExpression>(checkExpression)](
+             const ir::Expression &exp) {
     auto seq = get<ir::ExpressionSequence>(&exp);
     REQUIRE(seq);
     checkStatement(seq->stm);
@@ -62,11 +64,9 @@ auto checkExpressionSequence(CheckStatement &&checkStatement,
 
 template <typename... CheckStatements>
 auto checkSequence(CheckStatements &&... checkStatements) {
-  return [
-    size = sizeof...(checkStatements),
-    checkStatements =
-        std::forward_as_tuple(std::forward<CheckStatements>(checkStatements)...)
-  ](const ir::Statement &stm) {
+  return [size = sizeof...(checkStatements),
+          checkStatements = std::forward_as_tuple(std::forward<CheckStatements>(
+              checkStatements)...)](const ir::Statement &stm) {
     auto seq = get<ir::Sequence>(&stm);
     REQUIRE(seq);
     REQUIRE(seq->statements.size() == size);
@@ -76,15 +76,14 @@ auto checkSequence(CheckStatements &&... checkStatements) {
 
 template <typename CheckDest, typename CheckSrc>
 auto checkMove(CheckDest &&checkDest, CheckSrc &&checkSrc) {
-  return [
-    checkDest = std::forward<CheckDest>(checkDest),
-    checkSrc = std::forward<CheckSrc>(checkSrc)
-  ](const ir::Statement &stm) {
-    auto move = get<ir::Move>(&stm);
-    REQUIRE(move);
-    checkDest(move->dst);
-    checkSrc(move->src);
-  };
+  return
+      [checkDest = std::forward<CheckDest>(checkDest),
+       checkSrc = std::forward<CheckSrc>(checkSrc)](const ir::Statement &stm) {
+        auto move = get<ir::Move>(&stm);
+        REQUIRE(move);
+        checkDest(move->dst);
+        checkSrc(move->src);
+      };
 }
 
 auto checkLabel(OptLabel &label) {
@@ -92,6 +91,14 @@ auto checkLabel(OptLabel &label) {
     auto pLabel = get<temp::Label>(&exp);
     REQUIRE(pLabel);
     setOrCheck(label, *pLabel);
+  };
+}
+
+auto checkLabel(const std::string &label) {
+  return [&label](const auto &exp) {
+    auto pLabel = get<temp::Label>(&exp);
+    REQUIRE(pLabel);
+    REQUIRE(*pLabel == label);
   };
 }
 
@@ -111,27 +118,12 @@ auto checkInt(int i) {
   };
 }
 
-template <typename... CheckArgs>
-auto checkCall(OptLabel &label, const std::tuple<CheckArgs...> &checkArgs) {
-  return [
-    &label, &checkArgs,
-    size = std::tuple_size<std::decay_t<decltype(checkArgs)>>::value
-  ](const ir::Expression &exp) {
-    auto call = get<ir::Call>(&exp);
-    REQUIRE(call);
-    checkLabel(label)(call->fun);
-    REQUIRE(call->args.size() == size);
-    applyFunctionTupleToVector(call->args, checkArgs);
-  };
-}
-
 template <typename CheckLeft, typename CheckRight>
 auto checkBinaryOperation(ir::BinOp op, CheckLeft &&checkLeft,
                           CheckRight &&checkRight) {
-  return [
-    op, checkLeft = std::forward<CheckLeft>(checkLeft),
-    checkRight = std::forward<CheckRight>(checkRight)
-  ](const ir::Expression &exp) {
+  return [op, checkLeft = std::forward<CheckLeft>(checkLeft),
+          checkRight =
+              std::forward<CheckRight>(checkRight)](const ir::Expression &exp) {
     auto binOperation = get<ir::BinaryOperation>(&exp);
     REQUIRE(binOperation);
     REQUIRE(binOperation->op == op);
@@ -140,38 +132,63 @@ auto checkBinaryOperation(ir::BinOp op, CheckLeft &&checkLeft,
   };
 }
 
-template <typename... CheckArgs>
-auto checkLocalCall(OptLabel &label, CheckArgs &&... checkArgs) {
-  return [&label, checkArgs = std::forward_as_tuple(checkArgs...) ](
-      const ir::Expression &exp) {
-    using namespace tiger::frame::x64FastCall;
+template <typename CheckAddress>
+auto checkMemoryAccess(CheckAddress &&checkAddress) {
+  return [checkAddress = std::forward<CheckAddress>(checkAddress)](
+             const ir::Expression &exp) {
+    auto pMemAccess = get<ir::MemoryAccess>(&exp);
+    checkAddress(pMemAccess->address);
+  };
+}
+
+template <typename CheckLabel, typename... CheckArgs>
+auto checkCall(CheckLabel &&checkLabel, CheckArgs &&... checkArgs) {
+  return [checkLabel = std::forward<CheckLabel>(checkLabel),
+          size = sizeof...(checkArgs),
+          checkArgs =
+              std::forward_as_tuple(checkArgs...)](const ir::Expression &exp) {
+    auto call = get<ir::Call>(&exp);
+    REQUIRE(call);
+    checkLabel(call->fun);
+    REQUIRE(call->args.size() == size);
+    applyFunctionTupleToVector(call->args, checkArgs);
+  };
+}
+
+template <size_t level> auto checkStaticLink() {
+  return [](const ir::Expression &exp) {
+    checkMemoryAccess(checkBinaryOperation(ir::BinOp::PLUS,
+                                           checkStaticLink<level - 1>(),
+                                           checkInt(-WORD_SIZE)))(exp);
+  };
+}
+
+template <> auto checkStaticLink<0>() {
+  return [](const ir::Expression &exp) {
     OptReg fp = reg(Registers::RBP);
-    return checkCall(label, std::tuple_cat(std::make_tuple(checkBinaryOperation(
-                                               ir::BinOp::PLUS, checkReg(fp),
-                                               checkInt(0 - WORD_SIZE))),
-                                           checkArgs));
+    checkReg(fp)(exp);
   };
 }
 
 template <typename... CheckArgs>
-auto checkLibraryCall(const std::string &name, CheckArgs &&... checkArgs) {
-  return [
-    name,
-    checkArgs = std::forward_as_tuple(std::forward<CheckArgs>(checkArgs)...)
-  ](const ir::Expression &args) {
-    OptLabel label = temp::Label{name};
-    return checkCall(label, checkArgs);
-  };
+auto checkLocalCall(OptLabel &label, CheckArgs &&... checkArgs) {
+  return checkCall(checkLabel(label), checkStaticLink<1>(),
+                   std::forward<CheckArgs>(checkArgs)...);
+}
+
+template <typename... CheckArgs>
+auto checkExternalCall(const std::string &name, CheckArgs &&... checkArgs) {
+  return checkCall(checkLabel(name), std::forward<CheckArgs>(checkArgs)...);
 }
 
 template <typename CheckExp>
 auto checkExpressionStatement(CheckExp &&checkExp) {
-  return [checkExp =
-              std::forward<CheckExp>(checkExp)](const ir::Statement &stm) {
-    auto expStatement = get<ir::ExpressionStatement>(&stm);
-    REQUIRE(expStatement);
-    checkExp(expStatement->exp);
-  };
+  return
+      [checkExp = std::forward<CheckExp>(checkExp)](const ir::Statement &stm) {
+        auto expStatement = get<ir::ExpressionStatement>(&stm);
+        REQUIRE(expStatement);
+        checkExp(expStatement->exp);
+      };
 }
 
 // a nop is implemented as 0
@@ -181,10 +198,9 @@ template <typename CheckLeft, typename CheckRight>
 auto checkConditionalJump(ir::RelOp relOp, CheckLeft &&checkLeft,
                           CheckRight &&checkRight, OptLabel &trueDest,
                           OptLabel *falseDest = nullptr) {
-  return [
-    relOp, checkLeft = std::forward<CheckLeft>(checkLeft),
-    checkRight = std::forward<CheckRight>(checkRight), &trueDest, falseDest
-  ](const ir::Statement &stm) {
+  return [relOp, checkLeft = std::forward<CheckLeft>(checkLeft),
+          checkRight = std::forward<CheckRight>(checkRight), &trueDest,
+          falseDest](const ir::Statement &stm) {
     auto pCondJump = get<ir::ConditionalJump>(&stm);
     REQUIRE(pCondJump);
     REQUIRE(pCondJump->op == relOp);
@@ -206,22 +222,13 @@ auto checkString(OptLabel &stringLabel) {
   return checkLabel(stringLabel);
 }
 
-template <typename CheckAddress>
-auto checkMemoryAccess(CheckAddress &&checkAddress) {
-  return [checkAddress = std::forward<CheckAddress>(checkAddress)](
-      const ir::Expression &exp) {
-    auto pMemAccess = get<ir::MemoryAccess>(&exp);
-    checkAddress(pMemAccess->address);
-  };
-}
-
 template <typename CheckExp> auto checkJump(CheckExp &&checkExp) {
-  return [checkExp =
-              std::forward<CheckExp>(checkExp)](const ir::Statement &stm) {
-    auto pJump = get<ir::Jump>(&stm);
-    REQUIRE(pJump);
-    checkExp(pJump->exp);
-  };
+  return
+      [checkExp = std::forward<CheckExp>(checkExp)](const ir::Statement &stm) {
+        auto pJump = get<ir::Jump>(&stm);
+        REQUIRE(pJump);
+        checkExp(pJump->exp);
+      };
 }
 
 template <typename CheckStm>
@@ -236,9 +243,73 @@ auto checkMemberAddress(OptReg &r, int index) {
                                                 checkInt(WORD_SIZE))));
 }
 
+template <typename... CheckFragments>
+auto checkFragments(CheckFragments &&... checkFragments) {
+  return [size = sizeof...(checkFragments),
+          checkFragments = std::forward_as_tuple(std::forward<CheckFragments>(
+              checkFragments)...)](const FragmentList &fragments) {
+    REQUIRE(size == fragments.size());
+    applyFunctionTupleToVector(fragments, checkFragments);
+  };
+}
+
+template <typename CheckBody, typename CheckFrame>
+auto checkFunctionFragment(CheckBody &&checkBody, CheckFrame &&checkFrame) {
+  return [checkBody = std::forward<CheckBody>(checkBody),
+          checkFrame =
+              std::forward<CheckFrame>(checkFrame)](const Fragment &fragment) {
+    auto pFunctionFragment = get<FunctionFragment>(&fragment);
+    REQUIRE(pFunctionFragment);
+    checkBody(pFunctionFragment->m_body);
+    checkFrame(pFunctionFragment->m_frame);
+  };
+}
+
+auto checkStringFragment(const OptLabel &label, const std::string &string) {
+  return [&label, &string](const Fragment &fragment) {
+    auto pStringFragment = get<StringFragment>(&fragment);
+    REQUIRE(pStringFragment);
+    REQUIRE(label);
+    REQUIRE(*label == pStringFragment->m_label);
+    REQUIRE(string == pStringFragment->m_string);
+  };
+}
+
+template <typename... CheckFormals>
+auto checkFrame(const OptLabel &label, CheckFormals &&... checkFormals) {
+  return [&label, size = sizeof...(checkFormals),
+          checkFormals = std::forward_as_tuple(
+              std::forward<CheckFormals>(checkFormals)...)](
+             const std::shared_ptr<const frame::Frame> &frame) {
+    REQUIRE(frame);
+    REQUIRE(label == frame->name());
+    REQUIRE(frame->formals().size() == size);
+    applyFunctionTupleToVector(frame->formals(), checkFormals);
+  };
+}
+
+auto checkFrameFormal(int offset) {
+  return [offset](const frame::VariableAccess &varAccess) {
+    auto pInFrame = get<frame::InFrame>(&varAccess);
+    REQUIRE(pInFrame);
+    REQUIRE(pInFrame->m_offset == offset);
+  };
+}
+
+auto checkRegFormal(const OptReg &reg) {
+  return [&reg](const frame::VariableAccess &varAccess) {
+    auto pInReg = get<frame::InReg>(&varAccess);
+    REQUIRE(pInReg);
+    REQUIRE(reg);
+    REQUIRE(pInReg->m_reg == *reg);
+  };
+}
+
+auto checkStaticLinkFormal() { return checkFrameFormal(-WORD_SIZE); }
+
 TEST_CASE("lvalue") {
   SECTION("identifier") {
-    auto exp = checkedCompile(R"(
+    auto result = checkedCompile(R"(
 let
   var i := 0
 in
@@ -251,10 +322,10 @@ end
             checkMove( // allocates a register and set it to 0
                 checkReg(reg), checkInt(0))),
         checkReg(reg) // return previously allocated reg
-        )(exp);
+        )(result.first);
   }
   SECTION("field") {
-    auto exp = checkedCompile(R"(
+    auto result = checkedCompile(R"(
 let
   type rec = {i : int}
   var r : rec := nil
@@ -272,10 +343,10 @@ end
                               // previously allocated reg
             ir::BinOp::PLUS, checkReg(reg),
             checkBinaryOperation(ir::BinOp::MUL, checkInt(0),
-                                 checkInt(WORD_SIZE))))(exp);
+                                 checkInt(WORD_SIZE))))(result.first);
   }
   SECTION("array element") {
-    auto exp = checkedCompile(R"(
+    auto result = checkedCompile(R"(
 let
   type arr = array of int
   var a := arr[2] of 3
@@ -293,110 +364,120 @@ end
                     checkSequence(
                         checkMove( // set reg2 to result of malloc(array size),
                             checkReg(reg2),
-                            checkLibraryCall("malloc", checkBinaryOperation(
-                                                           ir::BinOp::MUL,
-                                                           checkInt(WORD_SIZE),
-                                                           checkInt(2)))),
+                            checkExternalCall("malloc", checkBinaryOperation(
+                                                            ir::BinOp::MUL,
+                                                            checkInt(WORD_SIZE),
+                                                            checkInt(2)))),
                         checkExpressionStatement(
-                            checkLibraryCall( // call initArray(array size,
-                                              // array init val)
+                            checkExternalCall( // call initArray(array size,
+                                               // array init val)
                                 "initArray", checkInt(2), checkInt(3)))),
                     checkReg(reg2)))),
         // returns the offset of element 1 in arr relative
         // to reg1
         checkBinaryOperation(ir::BinOp::PLUS, checkReg(reg1),
                              checkBinaryOperation(ir::BinOp::MUL, checkInt(1),
-                                                  checkInt(WORD_SIZE))))(exp);
+                                                  checkInt(WORD_SIZE))))(
+        result.first);
   }
 }
 
 TEST_CASE("nil") {
-  auto exp = checkedCompile("nil");
+  auto result = checkedCompile("nil");
   checkInt(0) // same as 0
-      (exp);
+      (result.first);
 }
 
 TEST_CASE("sequence") {
   // the last expression is the sequence results, the previous ones are just
   // statements
   SECTION("empty") {
-    auto exp = checkedCompile("()");
-    checkInt(0)(exp);
+    auto result = checkedCompile("()");
+    checkInt(0)(result.first);
   }
 
   SECTION("single") {
-    auto exp = checkedCompile("(42)");
-    checkInt(42)(exp);
+    auto result = checkedCompile("(42)");
+    checkInt(42)(result.first);
   }
 
   SECTION("multiple") {
-    auto exp = checkedCompile(R"((1;"two";flush()))");
-    OptLabel stringLabel;
+    auto result = checkedCompile(R"((1;"two";flush()))");
+    OptLabel stringLabel, flush = temp::Label{"flush"};
     checkExpressionSequence(
         checkSequence(checkExpressionStatement(checkInt(1)),
                       checkExpressionStatement(checkString(stringLabel))),
-        checkLibraryCall("flush"))(exp);
+        checkLocalCall(flush))(result.first);
+    checkFragments(checkStringFragment(stringLabel, "two"))(result.second);
   }
 }
 
 TEST_CASE("integer") {
-  auto exp = checkedCompile("42");
-  checkInt(42)(exp);
+  auto result = checkedCompile("42");
+  checkInt(42)(result.first);
 }
 
 TEST_CASE("string") {
-  auto exp = checkedCompile(R"("\tHello \"World\"!\n")");
+  auto str = R"("\tHello \"World\"!\n")";
+  auto result = checkedCompile(str);
   OptLabel stringLabel;
-  checkString(stringLabel)(exp);
+  checkString(stringLabel)(result.first);
+  checkFragments(checkStringFragment(stringLabel, "\tHello \"World\"!\n"))(
+      result.second);
 }
 
 TEST_CASE("function call") {
-  using namespace tiger::frame::x64FastCall;
   OptReg rv = reg(Registers::RAX);
   OptLabel functionLabel;
 
   SECTION("with no arguments") {
-    auto exp = checkedCompile(R"(
+    auto result = checkedCompile(R"(
 let
   function f() = ()
 in
   f()
 end
 )");
-    checkExpressionSequence(
-        checkSequence(                         // declarations
-            checkSequence(                     // functions declaration
-                checkSequence(                 // f
-                    checkLabel(functionLabel), // function label
-                    checkMove(                 // body
-                        checkReg(rv), checkInt(0))))),
-        checkLocalCall(functionLabel) // call
-        )(exp);
+    checkExpressionSequence(checkSequence( // declarations
+                                checkNop() // function declaration
+                                ),
+                            checkLocalCall(functionLabel) // call
+                            )(result.first);
+    checkFragments(checkFunctionFragment(
+        checkSequence(                 // f
+            checkLabel(functionLabel), // function label
+            checkMove(                 // body
+                checkReg(rv), checkInt(0))),
+        checkFrame(functionLabel, checkStaticLinkFormal())))(result.second);
   }
 
   SECTION("with arguments") {
-    auto exp = checkedCompile(R"(
+    OptReg rcx = reg(Registers::RCX);
+    auto result = checkedCompile(R"(
 let
   function f(a: int) = ()
 in
   f(2)
 end
 )");
-    checkExpressionSequence(
-        checkSequence(                         // declarations
-            checkSequence(                     // functions declaration
-                checkSequence(                 // f
-                    checkLabel(functionLabel), // function label
-                    checkMove(                 // body
-                        checkReg(rv), checkInt(0))))),
-        checkLocalCall(functionLabel) // call
-        )(exp);
+    checkExpressionSequence(checkSequence( // declarations
+                                checkNop() // function declaration
+                                ),
+                            checkLocalCall( // call
+                                functionLabel, checkInt(2)))(result.first);
+    checkFragments(
+        checkFunctionFragment(checkSequence(                 // f
+                                  checkLabel(functionLabel), // function label
+                                  checkMove(                 // body
+                                      checkReg(rv), checkInt(0))),
+                              checkFrame(functionLabel, checkStaticLinkFormal(),
+                                         checkRegFormal(rcx))))(result.second);
   }
 }
 
 TEST_CASE("record") {
   SECTION("empty") {
-    auto exp = checkedCompile(R"(
+    auto result = checkedCompile(R"(
 let 
   type t = {}
 in
@@ -410,12 +491,12 @@ end
             ),
         checkExpressionSequence(
             checkSequence(checkMove( // move result of malloc(record_size) to r
-                checkReg(r), checkLibraryCall("malloc", checkInt(0)))),
-            checkReg(r)))(exp);
+                checkReg(r), checkExternalCall("malloc", checkInt(0)))),
+            checkReg(r)))(result.first);
   }
 
   SECTION("not empty") {
-    auto exp = checkedCompile(R"(
+    auto result = checkedCompile(R"(
 let 
   type t = {a: int, b: string}
 in
@@ -432,17 +513,19 @@ end
         checkExpressionSequence(
             checkSequence(
                 checkMove( // move result of malloc(record_size) to r
-                    checkReg(r), checkLibraryCall("malloc", checkInt(8))),
+                    checkReg(r),
+                    checkExternalCall("malloc", checkInt(2 * WORD_SIZE))),
                 checkMove( // init first member with 2
                     checkMemberAddress(r, 0), checkInt(2)),
                 checkMove( // init second member with "hello"
                     checkMemberAddress(r, 1), checkString(stringLabel))),
-            checkReg(r)))(exp);
+            checkReg(r)))(result.first);
+    checkFragments(checkStringFragment(stringLabel, "hello"))(result.second);
   }
 }
 
 TEST_CASE("array") {
-  auto exp = checkedCompile(R"(
+  auto result = checkedCompile(R"(
 let
   type t = array of int
 in
@@ -458,13 +541,13 @@ end
           checkSequence(
               checkMove( // move result of malloc(array_size) to r
                   checkReg(r),
-                  checkLibraryCall("malloc",
-                                   checkBinaryOperation(ir::BinOp::MUL,
-                                                        checkInt(WORD_SIZE),
-                                                        checkInt(2)))),
+                  checkExternalCall("malloc",
+                                    checkBinaryOperation(ir::BinOp::MUL,
+                                                         checkInt(WORD_SIZE),
+                                                         checkInt(2)))),
               checkExpressionStatement( // call initArray(array_size, init_val)
-                  checkLibraryCall("initArray", checkInt(2), checkInt(3)))),
-          checkReg(r)))(exp);
+                  checkExternalCall("initArray", checkInt(2), checkInt(3)))),
+          checkReg(r)))(result.first);
 }
 
 TEST_CASE("arithmetic") {
@@ -476,7 +559,7 @@ TEST_CASE("arithmetic") {
 
   for (const auto &operation : operations) {
     SECTION(Catch::StringMaker<ir::BinOp>::convert(operation.second)) {
-      auto exp = checkedCompile(boost::str(boost::format(R"(
+      auto result = checkedCompile(boost::str(boost::format(R"(
   let
     var i : int := 2 %1% 3
   in
@@ -490,7 +573,7 @@ TEST_CASE("arithmetic") {
                         checkBinaryOperation(operation.second, checkInt(2),
                                              checkInt(3)))),
           checkReg(r) // return i
-          )(exp);
+          )(result.first);
     }
   }
 }
@@ -503,7 +586,7 @@ TEST_CASE("comparison") {
   SECTION("integer") {
     for (const auto &relation : relations) {
       SECTION(Catch::StringMaker<ir::BinOp>::convert(relation.second)) {
-        auto exp = checkedCompile(boost::str(boost::format(R"(
+        auto result = checkedCompile(boost::str(boost::format(R"(
   let
     var i : int := 2 %1% 3
   in
@@ -527,15 +610,14 @@ TEST_CASE("comparison") {
                                                        // or falseDest
                                                        // accordingly
                             checkLabel(falseDest),
-                            checkMove(
-                                checkReg(r),
-                                checkInt(
-                                    0)), // if condition is false, move 0 to r
+                            checkMove(checkReg(r),
+                                      checkInt(0)), // if condition is false,
+                                                    // move 0 to r
                             checkLabel(trueDest)),
                         checkReg(r) // move r to i
                         ))),
             checkReg(i) // return i
-            )(exp);
+            )(result.first);
       }
     }
   }
@@ -543,7 +625,7 @@ TEST_CASE("comparison") {
   SECTION("string") {
     for (const auto &relation : relations) {
       SECTION(Catch::StringMaker<ir::BinOp>::convert(relation.second)) {
-        auto exp = checkedCompile(boost::str(boost::format(R"(
+        auto result = checkedCompile(boost::str(boost::format(R"(
   let
     var i : int := "2" %1% "3"
   in
@@ -569,24 +651,25 @@ TEST_CASE("comparison") {
                                                   // the same as
                                                   // stringCompare(s1, s2) op 0
                                 relation.second,
-                                checkLibraryCall("stringCompare",
-                                                 checkString(leftString),
-                                                 checkString(rightString)),
+                                checkExternalCall("stringCompare",
+                                                  checkString(leftString),
+                                                  checkString(rightString)),
                                 checkInt(0), trueDest,
                                 &falseDest), // check condition,
                                              // jumping to trueDest
                                              // or falseDest
                                              // accordingly
                             checkLabel(falseDest),
-                            checkMove(
-                                checkReg(r2),
-                                checkInt(
-                                    0)), // if condition is false, move 0 to r2
+                            checkMove(checkReg(r2),
+                                      checkInt(0)), // if condition is false,
+                                                    // move 0 to r2
                             checkLabel(trueDest)),
                         checkReg(r2) // move r2 to r1
                         ))),
             checkReg(r1) // return i
-            )(exp);
+            )(result.first);
+        checkFragments(checkStringFragment(leftString, "2"),
+                       checkStringFragment(rightString, "3"))(result.second);
       }
     }
   }
@@ -597,7 +680,7 @@ TEST_CASE("comparison") {
   SECTION("record") {
     for (const auto &relation : eqNeq) {
       SECTION(Catch::StringMaker<ir::BinOp>::convert(relation.second)) {
-        auto exp = checkedCompile(boost::str(boost::format(R"(
+        auto result = checkedCompile(boost::str(boost::format(R"(
 let
   type t = {}
   var i := t{}
@@ -616,7 +699,7 @@ end
                         checkSequence(checkMove( // move result of
                                                  // malloc(record_size) to r
                             checkReg(r1),
-                            checkLibraryCall("malloc", checkInt(0)))),
+                            checkExternalCall("malloc", checkInt(0)))),
                         checkReg(r1)))),
             checkExpressionSequence(
                 checkSequence(
@@ -634,7 +717,7 @@ end
                         checkInt(0)), // if condition is false, move 0 to r2
                     checkLabel(trueDest)),
                 checkReg(r2) // move r2 to r1
-                ))(exp);
+                ))(result.first);
       }
     }
   }
@@ -642,7 +725,7 @@ end
   SECTION("array") {
     for (const auto &relation : eqNeq) {
       SECTION(Catch::StringMaker<ir::BinOp>::convert(relation.second)) {
-        auto exp = checkedCompile(boost::str(boost::format(R"(
+        auto result = checkedCompile(boost::str(boost::format(R"(
 let
   type t = array of int
   var i := t[2] of 3
@@ -662,7 +745,7 @@ end
                             checkMove( // move result of malloc(array_size) to
                                        // r1
                                 checkReg(r1),
-                                checkLibraryCall(
+                                checkExternalCall(
                                     "malloc",
                                     checkBinaryOperation(ir::BinOp::MUL,
                                                          checkInt(WORD_SIZE),
@@ -670,8 +753,8 @@ end
                             checkExpressionStatement( // call
                                                       // initArray(array_size,
                                                       // init_val)
-                                checkLibraryCall("initArray", checkInt(2),
-                                                 checkInt(3)))),
+                                checkExternalCall("initArray", checkInt(2),
+                                                  checkInt(3)))),
                         checkReg(r1)))),
             checkExpressionSequence(
                 checkSequence(
@@ -689,7 +772,7 @@ end
                         checkInt(0)), // if condition is false, move 0 to r2
                     checkLabel(trueDest)),
                 checkReg(r2) // move r2 to r1
-                ))(exp);
+                ))(result.first);
       }
     }
   }
@@ -697,7 +780,7 @@ end
 
 TEST_CASE("boolean") {
   SECTION("and") {
-    auto exp = checkedCompile("2 & 3");
+    auto result = checkedCompile("2 & 3");
     // a & b is translated to if a then b else 0
     OptReg r;
     OptLabel trueDest, falseDest, joinDest;
@@ -713,11 +796,11 @@ TEST_CASE("boolean") {
                 checkJump(checkLabel(joinDest))),
             checkLabel(joinDest) // branches join here
             ),
-        checkReg(r))(exp);
+        checkReg(r))(result.first);
   }
 
   SECTION("or") {
-    auto exp = checkedCompile("2 | 3");
+    auto result = checkedCompile("2 | 3");
     // a | b is translated to if a then 1 else b
     OptReg r;
     OptLabel trueDest, falseDest, joinDest;
@@ -733,12 +816,12 @@ TEST_CASE("boolean") {
                 checkJump(checkLabel(joinDest))),
             checkLabel(joinDest) // branches join here
             ),
-        checkReg(r))(exp);
+        checkReg(r))(result.first);
   }
 }
 
 TEST_CASE("assignment") {
-  auto exp = checkedCompile(R"(
+  auto result = checkedCompile(R"(
 let
   var a := 3
   var b := 0
@@ -753,12 +836,12 @@ end
                               checkMove( // move 0 to b
                                   checkReg(b), checkInt(0))),
                           checkStatementExpression(checkMove( // move b to a
-                              checkReg(b), checkReg(a))))(exp);
+                              checkReg(b), checkReg(a))))(result.first);
 }
 
 TEST_CASE("if then") {
   SECTION("no else") {
-    auto exp = checkedCompile(R"(
+    auto result = checkedCompile(R"(
 let
   var a := 0
 in
@@ -780,12 +863,12 @@ end
                           checkInt(3)), // move 3 to a
                 checkJump(checkLabel(joinDest))),
             checkLabel(joinDest) // branches join here
-            )))(exp);
+            )))(result.first);
   }
 
   SECTION("with else") {
     SECTION("both expression are of type void") {
-      auto exp = checkedCompile(R"(
+      auto result = checkedCompile(R"(
 let
   var a := 0
 in
@@ -812,11 +895,11 @@ end
                                                 checkInt(4)), // move 4 to a
                                       checkJump(checkLabel(joinDest))),
                                   checkLabel(joinDest) // branches join here
-                                  )))(exp);
+                                  )))(result.first);
     }
 
     SECTION("both expression are of the same type") {
-      auto exp = checkedCompile(R"(
+      auto result = checkedCompile(R"(
 let
   var a := if 1 then 2 else 3
 in
@@ -847,13 +930,13 @@ end
                                     ),
                       checkReg(r)))), // move r to a
           checkReg(a)                 // return a
-          )(exp);
+          )(result.first);
     }
   }
 }
 
 TEST_CASE("while") {
-  auto exp = checkedCompile(R"(
+  auto result = checkedCompile(R"(
 let
   var b := 2
   var a := 0
@@ -897,26 +980,23 @@ end
               checkBinaryOperation(ir::BinOp::PLUS, checkReg(a), checkInt(1))),
           checkJump( // jump back to loop Start
               checkLabel(loopStart)),
-          checkLabel(loopDone))))(exp);
+          checkLabel(loopDone))))(result.first);
 }
 
 TEST_CASE("for") {
-  auto exp = checkedCompile(R"(
+  auto result = checkedCompile(R"(
 let
   function f(a: int) = ()
 in
   for a := 0 to 4 do f(a)
 end
 )");
-  OptReg rv, a, limit;
+  OptReg rv, a, limit, rcx = reg(Registers::RCX);
   OptLabel functionLabel, loopStart, loopDone;
   checkExpressionSequence(
-      checkSequence(                         // declarations
-          checkSequence(                     // functions declaration
-              checkSequence(                 // f
-                  checkLabel(functionLabel), // function label
-                  checkMove(                 // body
-                      checkReg(rv), checkInt(0))))),
+      checkSequence( // declarations
+          checkNop() // function declaration
+          ),
       checkStatementExpression(checkSequence( // for
           checkMove(                          // move 0 to a
               checkReg(a), checkInt(0)),
@@ -933,12 +1013,19 @@ end
               checkBinaryOperation(ir::BinOp::PLUS, checkReg(a), checkInt(1))),
           checkConditionalJump(ir::RelOp::LT, checkReg(a), checkReg(limit),
                                loopStart),
-          checkLabel(loopDone))))(exp);
+          checkLabel(loopDone))))(result.first);
+  checkFragments(checkFunctionFragment(
+      checkSequence(                 // f
+          checkLabel(functionLabel), // function label
+          checkMove(                 // body
+              checkReg(rv), checkInt(0))),
+      checkFrame(functionLabel, checkStaticLinkFormal(), checkRegFormal(rcx))))(
+      result.second);
 }
 
 TEST_CASE("break") {
   SECTION("for") {
-    auto exp = checkedCompile("for a := 0 to 2 do break");
+    auto result = checkedCompile("for a := 0 to 2 do break");
     OptReg a, limit;
     OptLabel functionLabel, loopStart, loopDone;
     checkStatementExpression(checkSequence( // for
@@ -956,11 +1043,11 @@ TEST_CASE("break") {
             checkBinaryOperation(ir::BinOp::PLUS, checkReg(a), checkInt(1))),
         checkConditionalJump(ir::RelOp::LT, checkReg(a), checkReg(limit),
                              loopStart),
-        checkLabel(loopDone)))(exp);
+        checkLabel(loopDone)))(result.first);
   }
 
   SECTION("while") {
-    auto exp = checkedCompile("while 1 do break");
+    auto result = checkedCompile("while 1 do break");
     OptReg a, b, r;
     OptLabel loopStart, loopDone, trueDest, falseDest;
     checkStatementExpression(checkSequence( // while
@@ -973,13 +1060,13 @@ TEST_CASE("break") {
             checkLabel(loopDone)),
         checkJump( // jump back to loop Start
             checkLabel(loopStart)),
-        checkLabel(loopDone)))(exp);
+        checkLabel(loopDone)))(result.first);
   }
 }
 
 TEST_CASE("type declarations") {
   SECTION("name") {
-    auto exp = checkedCompile(R"(
+    auto result = checkedCompile(R"(
 let
   type a = int
   var b : a := 0
@@ -990,11 +1077,11 @@ end
     checkStatementExpression(checkSequence( // declarations
         checkNop(),                         // type declarations are no-ops
         checkMove(                          // move 0 to b
-            checkReg(b), checkInt(0))))(exp);
+            checkReg(b), checkInt(0))))(result.first);
   }
 
   SECTION("record") {
-    auto exp = checkedCompile(R"(
+    auto result = checkedCompile(R"(
 let
   type rec = {i : int}
   var r := rec{i=2}
@@ -1009,14 +1096,15 @@ end
             checkExpressionSequence(
                 checkSequence(
                     checkMove( // move result of malloc(record_size) to r2
-                        checkReg(r2), checkLibraryCall("malloc", checkInt(4))),
+                        checkReg(r2),
+                        checkExternalCall("malloc", checkInt(WORD_SIZE))),
                     checkMove( // init first member with 2
                         checkMemberAddress(r2, 0), checkInt(2))),
-                checkReg(r2)))))(exp);
+                checkReg(r2)))))(result.first);
   }
 
   SECTION("array") {
-    auto exp = checkedCompile(R"(
+    auto result = checkedCompile(R"(
 let
   type arr = array of string
   var a := arr[3] of "a"
@@ -1033,21 +1121,22 @@ end
                 checkSequence(
                     checkMove( // set reg2 to result of malloc(array size),
                         checkReg(r2),
-                        checkLibraryCall(
+                        checkExternalCall(
                             "malloc", checkBinaryOperation(ir::BinOp::MUL,
                                                            checkInt(WORD_SIZE),
                                                            checkInt(3)))),
                     checkExpressionStatement(
-                        checkLibraryCall( // call initArray(array size,
-                                          // array init val)
+                        checkExternalCall( // call initArray(array size,
+                                           // array init val)
                             "initArray", checkInt(3),
                             checkString(stringLabel)))),
-                checkReg(r2)))))(exp);
+                checkReg(r2)))))(result.first);
+    checkFragments(checkStringFragment(stringLabel, "a"))(result.second);
   }
 
   SECTION("recursive") {
     SECTION("single") {
-      auto exp = checkedCompile(R"(
+      auto result = checkedCompile(R"(
 let
   type intlist = {hd: int, tl: intlist}
 in
@@ -1062,7 +1151,8 @@ end
           checkExpressionSequence( // outer record
               checkSequence(
                   checkMove( // move result of malloc(record_size) to r1
-                      checkReg(r1), checkLibraryCall("malloc", checkInt(8))),
+                      checkReg(r1),
+                      checkExternalCall("malloc", checkInt(2 * WORD_SIZE))),
                   checkMove( // init first member
                       checkMemberAddress(r1, 0), checkInt(3)),
                   checkMove( // init second member
@@ -1072,17 +1162,18 @@ end
                               checkMove( // move result of malloc(record_size)
                                          // to r2
                                   checkReg(r2),
-                                  checkLibraryCall("malloc", checkInt(8))),
+                                  checkExternalCall("malloc",
+                                                    checkInt(2 * WORD_SIZE))),
                               checkMove( // init first member
                                   checkMemberAddress(r2, 0), checkInt(4)),
                               checkMove( // init second member
                                   checkMemberAddress(r2, 1), checkInt(0))),
                           checkReg(r2)))),
-              checkReg(r1)))(exp);
+              checkReg(r1)))(result.first);
     }
 
     SECTION("mutually") {
-      auto exp = checkedCompile(R"(
+      auto result = checkedCompile(R"(
 let
   type tree = {key: int, children: treelist}
   type treelist = {hd: tree, tl: treelist}
@@ -1098,7 +1189,8 @@ end
           checkExpressionSequence( // outer record
               checkSequence(
                   checkMove( // move result of malloc(record_size) to r1
-                      checkReg(r1), checkLibraryCall("malloc", checkInt(8))),
+                      checkReg(r1),
+                      checkExternalCall("malloc", checkInt(2 * WORD_SIZE))),
                   checkMove( // init first member
                       checkMemberAddress(r1, 0), checkInt(1)),
                   checkMove( // init second member
@@ -1108,7 +1200,8 @@ end
                               checkMove( // move result of malloc(record_size)
                                          // to r2
                                   checkReg(r2),
-                                  checkLibraryCall("malloc", checkInt(8))),
+                                  checkExternalCall("malloc",
+                                                    checkInt(2 * WORD_SIZE))),
                               checkMove( // init first member
                                   checkMemberAddress(r2, 0),
                                   checkExpressionSequence( // most inner record
@@ -1117,8 +1210,9 @@ end
                                                      // malloc(record_size) to
                                                      // r3
                                               checkReg(r3),
-                                              checkLibraryCall("malloc",
-                                                               checkInt(8))),
+                                              checkExternalCall(
+                                                  "malloc",
+                                                  checkInt(2 * WORD_SIZE))),
                                           checkMove( // init first member
                                               checkMemberAddress(r3, 0),
                                               checkInt(2)),
@@ -1129,18 +1223,17 @@ end
                               checkMove( // init second member
                                   checkMemberAddress(r2, 1), checkInt(0))),
                           checkReg(r2)))),
-              checkReg(r1)))(exp);
+              checkReg(r1)))(result.first);
     }
   }
 }
 
 TEST_CASE("function declarations") {
-  using namespace tiger::frame::x64FastCall;
 
   OptReg rv = reg(Registers::RAX);
 
   SECTION("simple") {
-    auto exp = checkedCompile(R"(
+    auto result = checkedCompile(R"(
 let
   function f() = ()
 in
@@ -1148,31 +1241,39 @@ end
 )");
     OptLabel functionLabel;
     checkStatementExpression(checkSequence( // declarations
-        checkSequence(                      // functions declaration
-            checkSequence(                  // f
-                checkLabel(functionLabel),  // function label
-                checkMove(                  // body
-                    checkReg(rv), checkInt(0))))))(exp);
+        checkNop()                          // function declaration
+        ))(result.first);
+    checkFragments(checkFunctionFragment(
+        checkSequence(                 // f
+            checkLabel(functionLabel), // function label
+            checkMove(                 // body
+                checkReg(rv), checkInt(0))),
+        checkFrame(functionLabel, checkStaticLinkFormal())))(result.second);
   }
 
   SECTION("with parameters") {
-    auto exp = checkedCompile(R"(
+    auto result = checkedCompile(R"(
 let
   function f(a:int, b:string) = ()
 in
 end
 )");
     OptLabel functionLabel;
+    OptReg rcx = reg(Registers::RCX), rdx = reg(Registers::RDX);
     checkStatementExpression(checkSequence( // declarations
-        checkSequence(                      // functions declaration
-            checkSequence(                  // f
-                checkLabel(functionLabel),  // function label
-                checkMove(                  // body
-                    checkReg(rv), checkInt(0))))))(exp);
+        checkNop()                          // function declaration
+        ))(result.first);
+    checkFragments(checkFunctionFragment(
+        checkSequence(                 // f
+            checkLabel(functionLabel), // function label
+            checkMove(                 // body
+                checkReg(rv), checkInt(0))),
+        checkFrame(functionLabel, checkStaticLinkFormal(), checkRegFormal(rcx),
+                   checkRegFormal(rdx))))(result.second);
   }
 
   SECTION("with return value") {
-    auto exp = checkedCompile(R"(
+    auto result = checkedCompile(R"(
 let
   function f(a:int, b:string) : string = (a:=1;b)
 in
@@ -1180,20 +1281,25 @@ end
 )");
     OptReg a, b;
     OptLabel functionLabel;
+    OptReg rcx = reg(Registers::RCX), rdx = reg(Registers::RDX);
     checkStatementExpression(checkSequence( // declarations
-        checkSequence(                      // functions declaration
-            checkSequence(                  // f
-                checkLabel(functionLabel),  // function label
-                checkMove(                  // body
-                    checkReg(rv),
-                    checkExpressionSequence(checkSequence(checkMove( // a=1
-                                                checkReg(a), checkInt(1))),
-                                            checkReg(b)))))))(exp);
+        checkNop()                          // function declaration
+        ))(result.first);
+    checkFragments(checkFunctionFragment(
+        checkSequence(                 // f
+            checkLabel(functionLabel), // function label
+            checkMove(                 // body
+                checkReg(rv),
+                checkExpressionSequence(checkSequence(checkMove( // a=1
+                                            checkReg(a), checkInt(1))),
+                                        checkReg(b)))),
+        checkFrame(functionLabel, checkStaticLinkFormal(), checkRegFormal(rcx),
+                   checkRegFormal(rdx))))(result.second);
   }
 
   SECTION("recursive") {
     SECTION("single") {
-      auto exp = checkedCompile(R"(
+      auto result = checkedCompile(R"(
 let
   function fib(n:int) : int = (
     if (n = 0 | n = 1) then n else fib(n-1)+fib(n-2)
@@ -1201,88 +1307,87 @@ let
 in
 end
 )");
-      CAPTURE(exp);
-      OptReg fp = reg(Registers::RBP), n, r[3];
+      CAPTURE(result.first);
+      OptReg rcx = reg(Registers::RCX), n, r[3];
       OptLabel functionLabel, trueDest[3], falseDest[3], joinDest[3];
       checkStatementExpression(checkSequence( // declarations
-          checkSequence(                      // functions declaration
-              checkSequence(                  // f
-                  checkLabel(functionLabel),  // function label
-                  checkMove(                  // body
-                      checkReg(rv),
-                      checkExpressionSequence(
-                          checkSequence(
-                              checkConditionalJump( // test
-                                  ir::RelOp::NE,
-                                  checkExpressionSequence(
-                                      checkSequence(
-                                          checkConditionalJump( // n = 0
-                                              ir::RelOp::EQ, checkReg(n),
-                                              checkInt(0), trueDest[0],
-                                              &falseDest[0]),
-                                          checkSequence( // then
-                                              checkLabel(trueDest[0]),
-                                              checkMove(checkReg(r[0]),
-                                                        checkInt(1)),
-                                              checkJump(
-                                                  checkLabel(joinDest[0]))),
-                                          checkSequence( // else
-                                              checkLabel(falseDest[0]),
-                                              checkMove(
-                                                  checkReg(r[0]),
-                                                  checkExpressionSequence( // n
-                                                                           // =
-                                                                           // 1
-                                                      checkSequence(
-                                                          checkMove(
-                                                              checkReg(r[1]),
-                                                              checkInt(1)),
-                                                          checkConditionalJump(
-                                                              ir::RelOp::EQ,
-                                                              checkReg(n),
-                                                              checkInt(1),
-                                                              trueDest[1],
-                                                              &falseDest[1]),
-                                                          checkLabel(
-                                                              falseDest[1]),
-                                                          checkMove(
-                                                              checkReg(r[1]),
-                                                              checkInt(0)),
-                                                          checkLabel(
-                                                              trueDest[1])),
-                                                      checkReg(r[1]))),
-                                              checkJump(
-                                                  checkLabel(joinDest[0]))),
-                                          checkLabel(joinDest[0])),
-                                      checkReg(r[0])),
-                                  checkInt(0), trueDest[2], &falseDest[2]),
-                              checkSequence( // then
-                                  checkLabel(trueDest[2]),
-                                  checkMove(checkReg(r[2]), checkReg(n)),
-                                  checkJump(checkLabel(joinDest[2]))),
-                              checkSequence( // else
-                                  checkLabel(falseDest[2]),
-                                  checkMove(
-                                      checkReg(r[2]),
-                                      checkBinaryOperation(
-                                          ir::BinOp::PLUS,
-                                          checkLocalCall(functionLabel,
-                                                         checkBinaryOperation(
-                                                             ir::BinOp::MINUS,
-                                                             checkReg(n),
-                                                             checkInt(1))),
-                                          checkLocalCall(functionLabel,
-                                                         checkBinaryOperation(
-                                                             ir::BinOp::MINUS,
-                                                             checkReg(n),
-                                                             checkInt(2))))),
-                                  checkJump(checkLabel(joinDest[2]))),
-                              checkLabel(joinDest[2])),
-                          checkReg(r[2])))))))(exp);
+          checkNop()                          // function declaration
+          ))(result.first);
+      checkFragments(checkFunctionFragment(
+          checkSequence(                 // f
+              checkLabel(functionLabel), // function label
+              checkMove(                 // body
+                  checkReg(rv),
+                  checkExpressionSequence(
+                      checkSequence(
+                          checkConditionalJump( // test
+                              ir::RelOp::NE,
+                              checkExpressionSequence(
+                                  checkSequence(
+                                      checkConditionalJump( // n = 0
+                                          ir::RelOp::EQ, checkReg(n),
+                                          checkInt(0), trueDest[0],
+                                          &falseDest[0]),
+                                      checkSequence( // then
+                                          checkLabel(trueDest[0]),
+                                          checkMove(checkReg(r[0]),
+                                                    checkInt(1)),
+                                          checkJump(checkLabel(joinDest[0]))),
+                                      checkSequence( // else
+                                          checkLabel(falseDest[0]),
+                                          checkMove(
+                                              checkReg(r[0]),
+                                              checkExpressionSequence( // n
+                                                                       // =
+                                                                       // 1
+                                                  checkSequence(
+                                                      checkMove(checkReg(r[1]),
+                                                                checkInt(1)),
+                                                      checkConditionalJump(
+                                                          ir::RelOp::EQ,
+                                                          checkReg(n),
+                                                          checkInt(1),
+                                                          trueDest[1],
+                                                          &falseDest[1]),
+                                                      checkLabel(falseDest[1]),
+                                                      checkMove(checkReg(r[1]),
+                                                                checkInt(0)),
+                                                      checkLabel(trueDest[1])),
+                                                  checkReg(r[1]))),
+                                          checkJump(checkLabel(joinDest[0]))),
+                                      checkLabel(joinDest[0])),
+                                  checkReg(r[0])),
+                              checkInt(0), trueDest[2], &falseDest[2]),
+                          checkSequence( // then
+                              checkLabel(trueDest[2]),
+                              checkMove(checkReg(r[2]), checkReg(n)),
+                              checkJump(checkLabel(joinDest[2]))),
+                          checkSequence( // else
+                              checkLabel(falseDest[2]),
+                              checkMove(
+                                  checkReg(r[2]),
+                                  checkBinaryOperation(
+                                      ir::BinOp::PLUS,
+                                      checkCall(checkLabel(functionLabel),
+                                                checkStaticLink<2>(),
+                                                checkBinaryOperation(
+                                                    ir::BinOp::MINUS,
+                                                    checkReg(n), checkInt(1))),
+                                      checkCall(
+                                          checkLabel(functionLabel),
+                                          checkStaticLink<2>(),
+                                          checkBinaryOperation(ir::BinOp::MINUS,
+                                                               checkReg(n),
+                                                               checkInt(2))))),
+                              checkJump(checkLabel(joinDest[2]))),
+                          checkLabel(joinDest[2])),
+                      checkReg(r[2])))),
+          checkFrame(functionLabel, checkStaticLinkFormal(),
+                     checkRegFormal(rcx))))(result.second);
     }
 
     SECTION("mutually") {
-      auto exp = checkedCompile(R"(
+      auto result = checkedCompile(R"(
 let
   function f() = (g())
   function g() = (h())
@@ -1293,19 +1398,32 @@ end
 
       OptLabel f, h, g;
       checkStatementExpression(checkSequence( // declarations
-          checkSequence(                      // functions
-              checkSequence(                  // f
-                  checkLabel(f), checkMove(checkReg(rv), checkLocalCall(g))),
+          checkNop()                          // function declaration
+          ))(result.first);
+      checkFragments(
+          checkFunctionFragment(
+              checkSequence( // f
+                  checkLabel(f),
+                  checkMove(checkReg(rv),
+                            checkCall(checkLabel(g), checkStaticLink<2>()))),
+              checkFrame(f, checkStaticLinkFormal())),
+          checkFunctionFragment(
               checkSequence( // g
-                  checkLabel(g), checkMove(checkReg(rv), checkLocalCall(h))),
+                  checkLabel(g),
+                  checkMove(checkReg(rv),
+                            checkCall(checkLabel(h), checkStaticLink<2>()))),
+              checkFrame(g, checkStaticLinkFormal())),
+          checkFunctionFragment(
               checkSequence( // h
-                  checkLabel(h), checkMove(checkReg(rv), checkLocalCall(f))))))(
-          exp);
+                  checkLabel(h),
+                  checkMove(checkReg(rv),
+                            checkCall(checkLabel(f), checkStaticLink<2>()))),
+              checkFrame(h, checkStaticLinkFormal())))(result.second);
     }
   }
 
   SECTION("nested") {
-    auto exp = checkedCompile(R"(
+    auto result = checkedCompile(R"(
 let
   function f(i: int) : int = (
     let
@@ -1320,44 +1438,47 @@ in
   f(3)
 end
 )");
-    CAPTURE(exp);
-    OptReg fp = reg(Registers::RBP);
+    CAPTURE(result.first);
+    OptReg fp = reg(Registers::RBP), rcx = reg(Registers::RCX);
     OptLabel f, g;
-    checkExpressionSequence(   // outer let
-        checkSequence(         // declarations
-            checkSequence(     // functions
-                checkSequence( // f
-                    checkLabel(f),
-                    checkMove(
-                        checkReg(rv),
-                        checkExpressionSequence(   // inner let
-                            checkSequence(         // declarations
-                                checkSequence(     // functions
-                                    checkSequence( // g
-                                        checkLabel(g),
-                                        checkMove(
-                                            checkReg(rv),
-                                            checkBinaryOperation( // i+2
-                                                ir::BinOp::PLUS,
-                                                checkMemoryAccess( // i is
-                                                                   // fetched
-                                                                   // from
-                                                                   // f's
-                                                                   // frame
-                                                    checkBinaryOperation(
-                                                        ir::BinOp::PLUS,
-                                                        checkMemoryAccess(
-                                                            checkBinaryOperation(
-                                                                ir::BinOp::PLUS,
-                                                                checkReg(fp),
-                                                                checkInt(
-                                                                    -WORD_SIZE))),
-                                                        checkInt(-2 *
-                                                                 WORD_SIZE))),
-                                                checkInt(2)))))),
-                            checkLocalCall(g)))))),
+    checkExpressionSequence( // outer let
+        checkSequence(       // declarations
+            checkNop()       // function declaration
+            ),
         checkLocalCall( // f(3)
-            f, checkInt(3)))(exp);
+            f, checkInt(3)))(result.first);
+    checkFragments(
+        checkFunctionFragment(
+            checkSequence( // g
+                checkLabel(g),
+                checkMove(checkReg(rv),
+                          checkBinaryOperation( // i+2
+                              ir::BinOp::PLUS,
+                              checkMemoryAccess( // i is
+                                                 // fetched
+                                                 // from
+                                                 // f's
+                                                 // frame
+                                  checkBinaryOperation(
+                                      ir::BinOp::PLUS,
+                                      checkMemoryAccess(checkBinaryOperation(
+                                          ir::BinOp::PLUS, checkReg(fp),
+                                          checkInt(-WORD_SIZE))),
+                                      checkInt(-2 * WORD_SIZE))),
+                              checkInt(2)))),
+            checkFrame(g, checkStaticLinkFormal())),
+        checkFunctionFragment(
+            checkSequence( // f
+                checkLabel(f),
+                checkMove(checkReg(rv),
+                          checkExpressionSequence( // inner let
+                              checkSequence(       // declarations
+                                  checkNop()       // function declaration
+
+                                  ),
+                              checkLocalCall(g)))),
+            checkFrame(f, checkStaticLinkFormal(),
+                       checkFrameFormal(2 * -WORD_SIZE))))(result.second);
   }
 }
 
@@ -1365,30 +1486,37 @@ TEST_CASE("standard library") {
   auto checkVoidLibraryCall = [](const std::string name,
                                  const std::string params,
                                  auto &&... checkArgs) {
-    auto exp = checkedCompile(name + "(" + params + ")");
-    checkLibraryCall(name, std::forward<std::decay_t<decltype(checkArgs)>>(
-                               checkArgs)...)(exp);
+    OptLabel label = temp::Label{name};
+    auto result = checkedCompile(name + "(" + params + ")");
+    checkLocalCall(label, std::forward<std::decay_t<decltype(checkArgs)>>(
+                              checkArgs)...)(result.first);
+    return result.second;
   };
 
-  auto checkNonVoidLibraryCall =
-      [](const std::string returnType, const std::string name,
-         const std::string params, auto &&... checkArgs) {
-        OptReg v;
-        auto exp = checkedCompile("let var v : " + returnType + " := " + name +
-                                  "(" + params + ") in end");
-        checkStatementExpression(checkSequence( // declarations
-            checkMove(checkReg(v),
-                      checkLibraryCall(
-                          name, std::forward<std::decay_t<decltype(checkArgs)>>(
-                                    checkArgs)...))))(exp);
-      };
+  auto checkNonVoidLibraryCall = [](const std::string returnType,
+                                    const std::string name,
+                                    const std::string params,
+                                    auto &&... checkArgs) {
+    OptReg v;
+    OptLabel label = temp::Label{name};
+    auto result = checkedCompile("let var v : " + returnType + " := " + name +
+                                 "(" + params + ") in end");
+    checkStatementExpression(checkSequence( // declarations
+        checkMove(checkReg(v),
+                  checkLocalCall(
+                      label, std::forward<std::decay_t<decltype(checkArgs)>>(
+                                 checkArgs)...))))(result.first);
+    return result.second;
+  };
 
   auto emptyString = "\"\"";
 
   // function print(s : string)
   SECTION("print") {
     OptLabel stringLabel;
-    checkVoidLibraryCall("print", emptyString, checkString(stringLabel));
+    auto fragments =
+        checkVoidLibraryCall("print", emptyString, checkString(stringLabel));
+    checkFragments(checkStringFragment(stringLabel, ""))(fragments);
   }
 
   // function flush()
@@ -1400,8 +1528,9 @@ TEST_CASE("standard library") {
   // function ord(s: string) : int
   SECTION("ord") {
     OptLabel stringLabel;
-    checkNonVoidLibraryCall("int", "ord", emptyString,
-                            checkString(stringLabel));
+    auto fragments = checkNonVoidLibraryCall("int", "ord", emptyString,
+                                             checkString(stringLabel));
+    checkFragments(checkStringFragment(stringLabel, ""))(fragments);
   }
 
   // function chr(i: int) : string
@@ -1410,22 +1539,27 @@ TEST_CASE("standard library") {
   // function size(s: string) : int
   SECTION("size") {
     OptLabel stringLabel;
-    checkNonVoidLibraryCall("int", "size", emptyString);
+    checkNonVoidLibraryCall("int", "size", emptyString,
+                            checkString(stringLabel));
   }
 
   // function substring(s:string, first:int, n:int) : string
   SECTION("substring") {
     OptLabel stringLabel;
-    checkNonVoidLibraryCall("string", "substring", "\"\", 1, 2",
-                            checkString(stringLabel), checkInt(1), checkInt(2));
+    auto fragments = checkNonVoidLibraryCall(
+        "string", "substring", "\"\", 1, 2", checkString(stringLabel),
+        checkInt(1), checkInt(2));
+    checkFragments(checkStringFragment(stringLabel, ""))(fragments);
   }
 
   // function concat(s1: string, s2: string) : string
   SECTION("concat") {
     OptLabel stringLabel[2];
-    checkNonVoidLibraryCall("string", "concat", "\"\", \"\"",
-                            checkString(stringLabel[0]),
-                            checkString(stringLabel[1]));
+    auto fragments = checkNonVoidLibraryCall("string", "concat", "\"\", \"\"",
+                                             checkString(stringLabel[0]),
+                                             checkString(stringLabel[1]));
+    checkFragments(checkStringFragment(stringLabel[0], ""),
+                   checkStringFragment(stringLabel[1], ""))(fragments);
   }
 
   // function not(i : integer) : integer
