@@ -5,8 +5,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(HunterGate)
 
 HunterGate(
-    URL "https://github.com/ruslo/hunter/archive/v0.19.151.tar.gz"
-    SHA1 "533246e4a2dc8e517bb32e912d9b1ae3885f9dd6"
+    URL "https://github.com/ruslo/hunter/archive/v0.19.232.tar.gz"
+    SHA1 "a412c45fe4c5a72fed386f62dd8d753bd4fd3d11"
 )
 
 project(GreenTiger)
