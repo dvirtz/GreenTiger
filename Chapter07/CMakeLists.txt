@@ -22,4 +22,4 @@ target_link_libraries(Chapter07
         includeHeaders
 )
 
-parse_unit_tests(Chapter07)
+parse_unit_tests(Chapter07 --timeout 10)

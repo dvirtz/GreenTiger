@@ -28,14 +28,17 @@ enable_testing()
 option(POST_BUILD_TESTS "Run tests on each target's post build step" TRUE)
 
 function(parse_unit_tests target)
-  include(ParseAndAddCatchTests)
+  include(CatchDiscoverTests)
   # abort on first failure
-  ParseAndAddCatchTests(${target} "-a")
+  catch_discover_tests(${target} 
+    EXTRA_ARGS -a -w NoAssertions 
+    PROPERTIES LABELS ${target}
+  )
 
   if (POST_BUILD_TESTS)
     add_custom_command(TARGET ${target}
       POST_BUILD
-      COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIG> -L ${target} --output-on-failure -j8
+      COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIG> -L ${target} --output-on-failure -j8 ${ARGN}
       COMMENT "Running ${target} unit tests")
   endif()
 endfunction()
