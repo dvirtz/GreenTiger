@@ -16,7 +16,7 @@ public:
   template <typename, typename> struct result { typedef void type; };
 
   void operator()(ast::Tagged &ast, Iterator pos) const {
-    int id = iters.size();
+    auto id = static_cast<int>(iters.size());
     iters.push_back(pos);
     ast.id = id;
   }
