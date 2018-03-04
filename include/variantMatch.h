@@ -25,4 +25,10 @@ template <typename Variant> auto match(Variant &&variant) {
   return detail::VariantMatcher<Variant>{std::forward<Variant>(variant)};
 }
 
+template <typename Variant, typename... Types> void assertTypes(const Variant &variant) {
+  bool result = false;
+  (void)std::initializer_list<int>{(result |= (boost::get<Types>(&variant) != nullptr), 0)...};
+  assert(result && "variant should have one of the listed types");
+}
+
 } // namespace helpers

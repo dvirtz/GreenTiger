@@ -9,6 +9,10 @@ template <typename T> struct strong_typedef {
 
   explicit operator T() const noexcept { return m_val; }
 
+  const T &get() const { return m_val; }
+
+  T &get() { return m_val; }
+
   friend std::ostream &operator<<(std::ostream &ost, const strong_typedef &sd) {
     return ost << sd.m_val;
   }
