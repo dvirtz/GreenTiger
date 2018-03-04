@@ -92,9 +92,9 @@ Expression Translator::translateVar(const std::vector<Level> &nestingLevels,
 
 Expression Translator::translateArrayAccess(const Expression &array,
                                             const Expression &index) {
-  return ir::BinaryOperation{
+  return ir::MemoryAccess{ir::BinaryOperation{
       ir::BinOp::PLUS, toExpression(array),
-      ir::BinaryOperation{ir::BinOp::MUL, toExpression(index), m_wordSize}};
+      ir::BinaryOperation{ir::BinOp::MUL, toExpression(index), m_wordSize}}};
 }
 
 Expression Translator::translateArithmetic(ir::BinOp operation,

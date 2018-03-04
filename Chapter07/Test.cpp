@@ -236,7 +236,7 @@ auto checkStatementExpression(CheckStm &&checkStm) {
   return checkExpressionSequence(std::forward<CheckStm>(checkStm), checkInt(0));
 }
 
-auto checkMemberAddress(OptReg &r, int index) {
+auto checkMemberAccess(OptReg &r, int index) {
   return checkMemoryAccess(
       checkBinaryOperation(ir::BinOp::PLUS, checkReg(r),
                            checkBinaryOperation(ir::BinOp::MUL, checkInt(index),
@@ -339,11 +339,7 @@ end
             checkNop(), // type declarations are no-ops
             checkMove(  // allocates a register and set it to 0
                 checkReg(reg), checkInt(0))),
-        checkBinaryOperation( // returns the offset of i in rec relative to
-                              // previously allocated reg
-            ir::BinOp::PLUS, checkReg(reg),
-            checkBinaryOperation(ir::BinOp::MUL, checkInt(0),
-                                 checkInt(WORD_SIZE))))(result.first);
+      checkMemberAccess(reg, 0))(result.first);
   }
   SECTION("array element") {
     auto result = checkedCompile(R"(
@@ -373,12 +369,7 @@ end
                                                // array init val)
                                 "initArray", checkInt(2), checkInt(3)))),
                     checkReg(reg2)))),
-        // returns the offset of element 1 in arr relative
-        // to reg1
-        checkBinaryOperation(ir::BinOp::PLUS, checkReg(reg1),
-                             checkBinaryOperation(ir::BinOp::MUL, checkInt(1),
-                                                  checkInt(WORD_SIZE))))(
-        result.first);
+      checkMemberAccess(reg1, 1))(result.first);
   }
 }
 
@@ -516,9 +507,9 @@ end
                     checkReg(r),
                     checkExternalCall("malloc", checkInt(2 * WORD_SIZE))),
                 checkMove( // init first member with 2
-                    checkMemberAddress(r, 0), checkInt(2)),
+                    checkMemberAccess(r, 0), checkInt(2)),
                 checkMove( // init second member with "hello"
-                    checkMemberAddress(r, 1), checkString(stringLabel))),
+                    checkMemberAccess(r, 1), checkString(stringLabel))),
             checkReg(r)))(result.first);
     checkFragments(checkStringFragment(stringLabel, "hello"))(result.second);
   }
@@ -1099,7 +1090,7 @@ end
                         checkReg(r2),
                         checkExternalCall("malloc", checkInt(WORD_SIZE))),
                     checkMove( // init first member with 2
-                        checkMemberAddress(r2, 0), checkInt(2))),
+                        checkMemberAccess(r2, 0), checkInt(2))),
                 checkReg(r2)))))(result.first);
   }
 
@@ -1154,9 +1145,9 @@ end
                       checkReg(r1),
                       checkExternalCall("malloc", checkInt(2 * WORD_SIZE))),
                   checkMove( // init first member
-                      checkMemberAddress(r1, 0), checkInt(3)),
+                      checkMemberAccess(r1, 0), checkInt(3)),
                   checkMove( // init second member
-                      checkMemberAddress(r1, 1),
+                      checkMemberAccess(r1, 1),
                       checkExpressionSequence( // inner record
                           checkSequence(
                               checkMove( // move result of malloc(record_size)
@@ -1165,9 +1156,9 @@ end
                                   checkExternalCall("malloc",
                                                     checkInt(2 * WORD_SIZE))),
                               checkMove( // init first member
-                                  checkMemberAddress(r2, 0), checkInt(4)),
+                                  checkMemberAccess(r2, 0), checkInt(4)),
                               checkMove( // init second member
-                                  checkMemberAddress(r2, 1), checkInt(0))),
+                                  checkMemberAccess(r2, 1), checkInt(0))),
                           checkReg(r2)))),
               checkReg(r1)))(result.first);
     }
@@ -1192,9 +1183,9 @@ end
                       checkReg(r1),
                       checkExternalCall("malloc", checkInt(2 * WORD_SIZE))),
                   checkMove( // init first member
-                      checkMemberAddress(r1, 0), checkInt(1)),
+                      checkMemberAccess(r1, 0), checkInt(1)),
                   checkMove( // init second member
-                      checkMemberAddress(r1, 1),
+                      checkMemberAccess(r1, 1),
                       checkExpressionSequence( // inner record
                           checkSequence(
                               checkMove( // move result of malloc(record_size)
@@ -1203,7 +1194,7 @@ end
                                   checkExternalCall("malloc",
                                                     checkInt(2 * WORD_SIZE))),
                               checkMove( // init first member
-                                  checkMemberAddress(r2, 0),
+                                  checkMemberAccess(r2, 0),
                                   checkExpressionSequence( // most inner record
                                       checkSequence(
                                           checkMove( // move result of
@@ -1214,14 +1205,14 @@ end
                                                   "malloc",
                                                   checkInt(2 * WORD_SIZE))),
                                           checkMove( // init first member
-                                              checkMemberAddress(r3, 0),
+                                              checkMemberAccess(r3, 0),
                                               checkInt(2)),
                                           checkMove( // init second member
-                                              checkMemberAddress(r3, 1),
+                                              checkMemberAccess(r3, 1),
                                               checkInt(0))),
                                       checkReg(r3))),
                               checkMove( // init second member
-                                  checkMemberAddress(r2, 1), checkInt(0))),
+                                  checkMemberAccess(r2, 1), checkInt(0))),
                           checkReg(r2)))),
               checkReg(r1)))(result.first);
     }
