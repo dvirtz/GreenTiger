@@ -16,8 +16,8 @@ endif()
 target_link_libraries(Chapter07 
     PRIVATE 
         Boost::boost 
-        Boost::system
         Boost::filesystem 
+        Boost::system
         Catch::Catch 
         includeHeaders
 )

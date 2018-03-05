@@ -1,6 +1,7 @@
 #pragma once
 #include "overload_set.h"
 #include <boost/variant/apply_visitor.hpp>
+#include <boost/variant/get.hpp>
 
 namespace helpers {
 

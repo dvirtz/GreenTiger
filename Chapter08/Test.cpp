@@ -261,8 +261,8 @@ auto checkProgram(CheckStatements &&... checkStatements) {
       REQUIRE(statements.size() == tupleSize(checkStatements) + 1);
       applyFunctionTupleToVector(
           statements,
-          std::tuple_cat(checkStatements,
-                         std::make_tuple(checkJump(checkLabel(end)))));
+        checkStatements);
+      checkJump(checkLabel(end))(statements.back());
     }
 
     end_checked = false;

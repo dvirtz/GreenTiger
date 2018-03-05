@@ -11,13 +11,16 @@ target_compile_definitions(Chapter08 PRIVATE CATCH_CPP14_OR_GREATER)
 
 if(MSVC)
 	set_source_files_properties(Program.cpp PROPERTIES COMPILE_FLAGS /bigobj)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
+  # https://stackoverflow.com/a/23376156/621176
+  set_source_files_properties(Test.cpp PROPERTIES COMPILE_FLAGS -ftemplate-depth=1024)
 endif()
 
 target_link_libraries(Chapter08 
     PRIVATE 
         Boost::boost 
-        Boost::system
         Boost::filesystem 
+        Boost::system
         Catch::Catch 
         includeHeaders
 )

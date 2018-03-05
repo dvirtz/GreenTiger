@@ -8,8 +8,8 @@ target_compile_definitions(Chapter03 PRIVATE CATCH_CPP14_OR_GREATER $<$<CONFIG:D
 target_link_libraries(Chapter03 
     PRIVATE 
         Boost::boost 
-        Boost::system
         Boost::filesystem 
+        Boost::system
         Catch::Catch 
         includeHeaders)
 
