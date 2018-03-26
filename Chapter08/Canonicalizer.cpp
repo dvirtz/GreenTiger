@@ -202,20 +202,20 @@ ir::Statement Canonicalizer::reorder(Iterator first, Iterator last) const {
         return reorder(first, last);
       },
       [&](auto & /*default*/) -> ir::Statement {
-        auto reorderedExpression = reorderExpression(exp);
-        auto reorderedTail = reorder(std::next(first), last);
-        if (commutes(reorderedTail, reorderedExpression.m_exp)) {
+        auto reorderedExpression = this->reorderExpression(exp);
+        auto reorderedTail = this->reorder(std::next(first), last);
+        if (this->commutes(reorderedTail, reorderedExpression.m_exp)) {
           // swap location of reorderedTail and reorderedExpression.second
           exp = reorderedExpression.m_exp;
-          return sequence(reorderedExpression.m_stm, reorderedTail);
+          return this->sequence(reorderedExpression.m_stm, reorderedTail);
         } else {
           // move reorderedExpression.second to a temporary and replace exp with
           // it
           auto t = m_tempMap.newTemp();
           exp = t;
-          return sequence(reorderedExpression.m_stm,
-                          ir::Move{t, reorderedExpression.m_exp},
-                          reorderedTail);
+          return this->sequence(reorderedExpression.m_stm,
+                                ir::Move{t, reorderedExpression.m_exp},
+                                reorderedTail);
         }
       });
 }
@@ -252,10 +252,10 @@ ir::Statement Canonicalizer::reorderStatement(ir::Statement &stm) const {
                                     stm);
                   },
                   [this, &move, &stm](auto & /*default*/) {
-                    return sequence(reorder(move.src), stm);
+                    return this->sequence(this->reorder(move.src), stm);
                   });
             },
-            [this, &stm, &move](ir::MemoryAccess & memoryAccess) {
+            [this, &stm, &move](ir::MemoryAccess &memoryAccess) {
               return sequence(reorder(memoryAccess.address, move.src), stm);
             },
             [this, &stm, &move](ir::ExpressionSequence &eSeq) {
@@ -268,7 +268,6 @@ ir::Statement Canonicalizer::reorderStatement(ir::Statement &stm) const {
               assert(false && "dst should be temp or mem only");
               return ir::Statement{};
             });
-        return sequence(reorder(move.dst, move.src));
       },
       [this, &stm](ir::ExpressionStatement &expressionStatement) {
         return match(expressionStatement.exp)(
@@ -276,7 +275,8 @@ ir::Statement Canonicalizer::reorderStatement(ir::Statement &stm) const {
               return sequence(reorder(call.args.begin(), call.args.end()), stm);
             },
             [this, &stm, &expressionStatement](auto & /*default*/) {
-              return sequence(reorder(expressionStatement.exp), stm);
+              return this->sequence(this->reorder(expressionStatement.exp),
+                                    stm);
             });
       },
       [&stm](auto & /*default*/) { return stm; });
