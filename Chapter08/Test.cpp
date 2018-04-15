@@ -28,7 +28,7 @@ static OptReg rv = reg(Registers::RAX);
 static OptLabel start{"start"}, end{"end"};
 static bool end_checked = false;
 
-TEST_CASE("compile test files", "[.]") {
+TEST_CASE("compile test files") {
   namespace fs = boost::filesystem;
   forEachTigerTest(
       [](const fs::path &filepath, bool parseError, bool compilationError) {
