@@ -5,8 +5,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(HunterGate)
 
 HunterGate(
-    URL "https://github.com/ruslo/hunter/archive/v0.22.19.tar.gz"
-    SHA1 "54749ffc945f78362aa680a7abbafcaa40ff9069"
+    URL "https://github.com/ruslo/hunter/archive/v0.23.7.tar.gz"
+    SHA1 "183d23691c5bb2e3053bd6a7ad6021d16b24664d"
 )
 
 project(GreenTiger)
@@ -18,8 +18,11 @@ find_package(Boost CONFIG REQUIRED ${BOOST_COMPONENTS})
 hunter_add_package(Catch)
 find_package(Catch2 CONFIG REQUIRED)
 
-# hunter_add_package(type_safe)
-# find_package(type_safe CONFIG REQUIRED)
+hunter_add_package(range-v3)
+find_package(range-v3 CONFIG REQUIRED)
+
+hunter_add_package(Microsoft.GSL)
+find_package(Microsoft.GSL CONFIG REQUIRED)
 
 include(CompilerWarnings)
 
@@ -74,3 +77,4 @@ add_subdirectory(Chapter05)
 add_subdirectory(Chapter06)
 add_subdirectory(Chapter07)
 add_subdirectory(Chapter08)
+add_subdirectory(Chapter09)

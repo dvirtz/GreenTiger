@@ -719,6 +719,9 @@ end
 }
 
 TEST_CASE("if then") {
+  OptReg a;
+  OptLabel trueDest, falseDest, joinDest;
+  
   SECTION("no else") {
     auto program = checkedCompile(R"(
 let
@@ -727,21 +730,22 @@ in
   if 1 then a := 3
 end
 )");
-    OptReg a;
-    OptLabel falseDest, joinDest;
     checkProgram(
         // every CJUMP(cond, lt , lf) is immediately followed by LABEL(lf), its
         // "false branch."
         checkMove( // move 0 to a
             checkReg(a), checkInt(0)),
         checkConditionalJump( // test
-            ir::RelOp::EQ, checkInt(1), checkInt(0), nullptr, &falseDest),
+            ir::RelOp::NE, checkInt(1), checkInt(0), &trueDest, &falseDest),
         checkLabel(falseDest),
-        checkMove( // move 3 to a
-            checkReg(a), checkInt(3)),
         checkLabel(joinDest), // branches join here
         checkMove(            // return 0
-            checkReg(rv), checkInt(0)))(program);
+            checkReg(rv), checkInt(0)),
+          checkJump(checkLabel(end)),
+          checkLabel(trueDest),
+        checkMove( // move 3 to a
+            checkReg(a), checkInt(3)),
+            checkJump(checkLabel(joinDest)))(program);
   }
 
   SECTION("with else") {
@@ -753,8 +757,6 @@ in
   if 0 then a := 3 else a := 4
 end
 )");
-      OptReg a;
-      OptLabel trueDest, falseDest, joinDest;
       checkProgram(
           // every CJUMP(cond, lt , lf) is immediately followed by LABEL(lf),
           // its "false branch."
@@ -783,8 +785,7 @@ in
   a
 end
 )");
-      OptReg a, r;
-      OptLabel trueDest, falseDest, joinDest;
+      OptReg r;
       checkProgram(
           // every CJUMP(cond, lt , lf) is immediately followed by LABEL(lf),
           // its "false branch."
@@ -836,18 +837,18 @@ end
                 checkInt(0)), // if condition is false, move 0 to r
       checkLabel(trueDest),
       checkConditionalJump( // test
-          ir::RelOp::NE, checkReg(r), checkInt(0), nullptr,
-          &loopDone // if test equals 0 jumps to loopDone
-          ),
-      checkLabel(loopDone),
-      checkMove( // return 0
-          checkReg(rv), checkInt(0)),
-      checkJump(checkLabel(end)), checkLabel(loopNotDone),
+          ir::RelOp::EQ, checkReg(r), checkInt(0), &loopDone,
+          &loopNotDone // if test equals 0 jumps to loopDone
+          ), 
+      checkLabel(loopNotDone),
       checkMove( // a := a + 1
           checkReg(a),
           checkBinaryOperation(ir::BinOp::PLUS, checkReg(a), checkInt(1))),
       checkJump( // jump back to loop Start
-          checkLabel(loopStart)))(program);
+          checkLabel(loopStart)),
+      checkLabel(loopDone),
+      checkMove( // return 0
+          checkReg(rv), checkInt(0)))(program);
 }
 
 TEST_CASE("for") {
@@ -859,24 +860,23 @@ in
 end
 )");
   OptReg rv, a, limit, rcx = reg(Registers::RCX);
-  OptLabel functionLabel, loopStart, loopDone, postLoop, functionEnd;
+  OptLabel functionLabel, loopStart, loopDone, functionEnd;
   checkProgram(
       checkMove( // move 0 to a
           checkReg(a), checkInt(0)),
       checkMove( // move 4 to limit
           checkReg(limit), checkInt(4)),
       checkConditionalJump( // skip the loop if a > limit
-          ir::RelOp::LE, checkReg(a), checkReg(limit), nullptr, &loopDone),
-      checkLabel(loopDone), checkMove(checkReg(rv), checkInt(0)),
-      checkJump(checkLabel(end)), checkLabel(loopStart),
+          ir::RelOp::GT, checkReg(a), checkReg(limit), &loopDone, &loopStart), checkLabel(loopStart),
       checkExpressionStatement(checkLocalCall( // f(a)
           functionLabel, checkReg(a))),
       checkMove( // a := a + 1
           checkReg(a),
           checkBinaryOperation(ir::BinOp::PLUS, checkReg(a), checkInt(1))),
       checkConditionalJump(ir::RelOp::LT, checkReg(a), checkReg(limit),
-                           &loopStart, &postLoop),
-      checkLabel(postLoop), checkJump(checkLabel(end)),
+                           &loopStart, &loopDone),
+      checkLabel(loopDone), checkMove(checkReg(rv), checkInt(0)),
+      checkJump(checkLabel(end)),
       checkLabel(functionLabel), // function label
       checkMove(                 // body
           checkReg(rv), checkInt(0)),
@@ -894,33 +894,29 @@ TEST_CASE("break") {
         checkMove( // move 4 to limit
             checkReg(limit), checkInt(2)),
         checkConditionalJump( // skip the loop if a > limit
-            ir::RelOp::LE, checkReg(a), checkReg(limit), nullptr, &loopDone),
+            ir::RelOp::GT, checkReg(a), checkReg(limit), &loopDone, &loopStart), checkLabel(loopStart),
         checkLabel(loopDone), checkMove(checkReg(rv), checkInt(0)),
-        checkJump(checkLabel(end)), checkLabel(loopStart),
-        checkJump( // break
-            checkLabel(loopDone)),
+        checkJump(checkLabel(end)),
         checkLabel(afterBreak),
         checkMove( // a := a + 1
             checkReg(a),
             checkBinaryOperation(ir::BinOp::PLUS, checkReg(a), checkInt(1))),
         checkConditionalJump(ir::RelOp::LT, checkReg(a), checkReg(limit),
                              &loopStart, &postLoop),
-        checkLabel(postLoop), checkJump(checkLabel(end)))(program);
+        checkLabel(postLoop), checkJump(checkLabel(loopDone)))(program);
   }
 
   SECTION("while") {
     auto program = checkedCompile("while 1 do break");
     OptReg a, b, r;
-    OptLabel loopStart, loopDone, insideLoop, afterBreak;
+    OptLabel loopStart, loopDone, loopNotDone, afterBreak;
     checkProgram(checkLabel(loopStart),
                  checkConditionalJump( // test
-                     ir::RelOp::NE, checkInt(1), checkInt(0), nullptr,
-                     &loopDone // if test equals 0 jumps to loopDone
+                     ir::RelOp::EQ, checkInt(1), checkInt(0), &loopDone, &loopNotDone // if test equals 0 jumps to loopDone
                      ),
+                     checkLabel(loopNotDone), 
                  checkLabel(loopDone), checkMove(checkReg(rv), checkInt(0)),
-                 checkJump(checkLabel(end)), checkLabel(insideLoop),
-                 checkJump( // break
-                     checkLabel(loopDone)),
+                 checkJump(checkLabel(end)), 
                  checkLabel(afterBreak),
                  checkJump( // jump back to loop Start
                      checkLabel(loopStart)))(program);

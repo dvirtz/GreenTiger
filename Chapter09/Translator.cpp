@@ -21,7 +21,7 @@ Level Translator::newLevel(temp::Label label, const frame::BoolList &formals) {
   frame::BoolList withStaticLink = formals;
   withStaticLink.resize(withStaticLink.size() + 1);
   (withStaticLink <<= 1).set(0, true);
-  m_frames.emplace_back(m_callingConvention.createFrame(label, withStaticLink));
+  m_frames.emplace_back(m_callingConvention.createFrame(m_tempMap, label, withStaticLink));
   return m_frames.size() - 1;
 }
 
@@ -72,9 +72,7 @@ Condition Translator::toCondition(const Expression &exp) {
   using helpers::match;
   return match(exp)(
       [](const ir::Expression &e) {
-        auto cjump = ir::ConditionalJump{ir::RelOp::NE, e, 0,
-                                         std::make_shared<temp::Label>(),
-                                         std::make_shared<temp::Label>()};
+        auto cjump = ir::ConditionalJump{ir::RelOp::NE, e, 0};
         return Condition{{*cjump.trueDest}, {*cjump.falseDest}, cjump};
       },
       [](const ir::Statement &/* stm */) {
@@ -106,9 +104,7 @@ Expression Translator::translateArithmetic(ir::BinOp operation,
 Expression Translator::translateRelation(ir::RelOp relation,
                                          const Expression &lhs,
                                          const Expression &rhs) {
-  ir::ConditionalJump cjump{relation, toExpression(lhs), toExpression(rhs),
-                            std::make_unique<temp::Label>(),
-                            std::make_unique<temp::Label>()};
+  ir::ConditionalJump cjump{relation, toExpression(lhs), toExpression(rhs)};
   return Condition{PatchList{*cjump.trueDest}, PatchList{*cjump.falseDest},
                    cjump};
 }
@@ -118,9 +114,9 @@ Expression Translator::translateStringCompare(ir::RelOp relation,
                                               const Expression &rhs) {
   ir::ConditionalJump cjump{
       relation,
-      m_callingConvention.externalCall("stringCompare",
+      m_callingConvention.externalCall(m_tempMap.namedLabel("stringCompare"),
                                        {toExpression(lhs), toExpression(rhs)}),
-      0, std::make_unique<temp::Label>(), std::make_unique<temp::Label>()};
+      0};
   return Condition{PatchList{*cjump.trueDest}, PatchList{*cjump.falseDest},
                    cjump};
 }
@@ -182,7 +178,6 @@ Expression Translator::translateConstant(int value) {
 
 Expression Translator::translateString(const std::string &value) {
   auto lab = m_tempMap.newLabel();
-  m_callingConvention.allocateString(lab, value);
   m_fragments.emplace_back(StringFragment{lab, value});
   return ir::Expression{lab};
 }
@@ -192,7 +187,7 @@ Expression Translator::translateRecord(const std::vector<Expression> &fields) {
   ir::Sequence res;
   res.statements.emplace_back(ir::Move{
       r, m_callingConvention.externalCall(
-             "malloc",
+             m_tempMap.namedLabel("malloc"),
              {ir::Expression{static_cast<int>(m_wordSize * fields.size())}})});
   for (const auto &field : fields) {
     auto address = ir::BinaryOperation{
@@ -212,10 +207,12 @@ Expression Translator::translateArray(const Expression &size,
   auto r = m_tempMap.newTemp();
   ir::Sequence res{
       ir::Move{r, m_callingConvention.externalCall(
-                      "malloc", {ir::BinaryOperation{ir::BinOp::MUL, m_wordSize,
-                                                     toExpression(size)}})},
+                      m_tempMap.namedLabel("malloc"),
+                      {ir::BinaryOperation{ir::BinOp::MUL, m_wordSize,
+                                           toExpression(size)}})},
       ir::ExpressionStatement{m_callingConvention.externalCall(
-          "initArray", {toExpression(size), toExpression(value)})}};
+          m_tempMap.namedLabel("initArray"),
+          {toExpression(size), toExpression(value)})}};
   return ir::ExpressionSequence{res, r};
 }
 
@@ -229,8 +226,7 @@ Expression Translator::translateWhileLoop(const Expression &test,
 
   return ir::Sequence{
       loopStart,
-      ir::ConditionalJump{ir::RelOp::EQ, toExpression(test), 0,
-                          std::make_shared<temp::Label>(loopDone), std::make_shared<temp::Label>(loopNotDone)},
+      ir::ConditionalJump{ir::RelOp::EQ, toExpression(test), 0, loopDone, loopNotDone},
       loopNotDone, toStatement(body), ir::Jump{loopStart}, loopDone};
 }
 
@@ -255,12 +251,12 @@ Expression Translator::translateForLoop(const Expression &var,
       ir::Move{counter, toExpression(from)},
       ir::Move{limit, toExpression(to)},
       ir::ConditionalJump{ir::RelOp::GT, counter, limit,
-                          std::make_shared<temp::Label>(loopDone), std::make_shared<temp::Label>(loopStart)},
+                          loopDone, loopStart},
       loopStart,
       toStatement(body),
       ir::Move{counter, ir::BinaryOperation{ir::BinOp::PLUS, counter, 1}},
       ir::ConditionalJump{ir::RelOp::LT, counter, limit,
-                          std::make_shared<temp::Label>(loopStart), std::make_shared<temp::Label>(loopDone)},
+                          loopStart, loopDone},
       loopDone};
 }
 
