@@ -5,8 +5,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(HunterGate)
 
 HunterGate(
-    URL "https://github.com/ruslo/hunter/archive/v0.19.232.tar.gz"
-    SHA1 "a412c45fe4c5a72fed386f62dd8d753bd4fd3d11"
+    URL "https://github.com/ruslo/hunter/archive/v0.22.19.tar.gz"
+    SHA1 "54749ffc945f78362aa680a7abbafcaa40ff9069"
 )
 
 project(GreenTiger)
@@ -18,7 +18,7 @@ hunter_add_package(Boost COMPONENTS ${BOOST_COMPONENTS})
 find_package(Boost CONFIG REQUIRED ${BOOST_COMPONENTS})
 
 hunter_add_package(Catch)
-find_package(Catch CONFIG REQUIRED)
+find_package(Catch2 CONFIG REQUIRED)
 
 # hunter_add_package(type_safe)
 # find_package(type_safe CONFIG REQUIRED)

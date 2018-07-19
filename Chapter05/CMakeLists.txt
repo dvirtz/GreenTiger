@@ -15,7 +15,7 @@ target_link_libraries(Chapter05
         Boost::boost 
         Boost::filesystem 
         Boost::system
-        Catch::Catch 
+        Catch2::Catch 
         includeHeaders)
 
 parse_unit_tests(Chapter05)
