@@ -1,6 +1,9 @@
 # Visual Studio 2015 cache/options directory
 .vs/
 
+# VS Code
+.vscode/
+
 # build folders
 _*/
-/book/The Green Tiger Book.pdf
+build
