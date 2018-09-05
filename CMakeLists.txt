@@ -11,8 +11,6 @@ HunterGate(
 
 project(GreenTiger)
 
-set(CMAKE_CXX_STANDARD 14)
-
 set(BOOST_COMPONENTS system filesystem)
 hunter_add_package(Boost COMPONENTS ${BOOST_COMPONENTS})
 find_package(Boost CONFIG REQUIRED ${BOOST_COMPONENTS})
