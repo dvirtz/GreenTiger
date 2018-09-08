@@ -242,7 +242,7 @@ auto checkMemberAccess(OptReg &r, int index) {
   return checkMemoryAccess(checkMemberAddress(r, index));
 }
 
-template <typename Tuple> auto tupleSize(const Tuple &t) {
+template <typename Tuple> auto tupleSize(const Tuple &/* t */) {
   return std::tuple_size<Tuple>::value;
 }
 

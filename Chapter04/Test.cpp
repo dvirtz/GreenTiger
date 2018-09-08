@@ -15,7 +15,7 @@ using helpers::applyFunctionTupleToVector;
 
 TEST_CASE("parse test files") {
   namespace fs = boost::filesystem;
-  forEachTigerTest([](const fs::path &filepath, bool parseError, bool compilationError) {
+  forEachTigerTest([](const fs::path &filepath, bool parseError, bool /* compilationError */) {
     auto filename = filepath.filename();
     CAPTURE(filename);
     ast::Expression ast;
@@ -114,8 +114,6 @@ auto checkSequence(CheckExps&&... checkExps)
 
 TEST_CASE("sequence") {
   ast::Expression ast;
-  auto getSequence = [](const ast::Expression& ast) {
-  };
   SECTION("empty") {
     REQUIRE(parse("()", ast));
     checkSequence()(ast);
@@ -151,7 +149,7 @@ auto checkArithmetic(CheckLhs&& checkLhs, CheckOps&&... checkOps)
     checkLhs(pArithmetic->first);
     applyFunctionsToVector(pArithmetic->rest, std::forward<CheckOps>(checkOps)...);
   };
-};
+}
 
 template<typename CheckExp>
 auto checkOperation(ast::Operation op, CheckExp&& checkExp) {
@@ -217,7 +215,7 @@ TEST_CASE("string") {
 	}
   }
   SECTION("multi line") {
-    parse(R"("abc\ 
+    parse(R"("abc\
       \efg")", ast);
     checkString("abcefg")(ast);
   }
@@ -284,7 +282,7 @@ TEST_CASE("arithmetic") {
       REQUIRE(get<ast::CallExpression>(&ast));
     },
       checkOperation(ast::Operation::PLUS,
-        [&](const ast::Expression& ast) {
+        [&](const ast::Expression& /* ast */) {
       checkArithmetic(
         [](const ast::Expression& ast) {
         REQUIRE(get<ast::VarExpression>(&ast));
@@ -384,14 +382,14 @@ template<typename CheckLhs, typename CheckRhs>
 auto checkAnd(CheckLhs&& checkLhs, CheckRhs&& checkRhs)
 {
   return checkIf(std::forward<decltype(checkLhs)>(checkLhs), std::forward<decltype(checkRhs)>(checkRhs), checkInt(0));
-};
+}
 
 // a|b is translated to if a then 1 else b
 template<typename CheckLhs, typename CheckRhs>
 auto checkOr(CheckLhs&& checkLhs, CheckRhs&& checkRhs)
 {
   return checkIf(std::forward<decltype(checkLhs)>(checkLhs), checkInt(1), std::forward<decltype(checkRhs)>(checkRhs));
-};
+}
 
 TEST_CASE("boolean") {
   ast::Expression ast;

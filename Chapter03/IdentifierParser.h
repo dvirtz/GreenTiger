@@ -8,7 +8,7 @@ template <typename Iterator>
 class IdentifierParser
   : public boost::spirit::qi::grammar<Iterator, Skipper<Iterator>> {
 public:
-  IdentifierParser(ErrorHandler<Iterator> &errorHandler)
+  IdentifierParser(ErrorHandler<Iterator> &/* errorHandler */)
     : IdentifierParser::base_type(identifier) {
     namespace spirit = boost::spirit;
     namespace qi = spirit::qi;

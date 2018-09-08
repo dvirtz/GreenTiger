@@ -53,7 +53,7 @@ public:
       [&](ast::ForExpression& e) { (*this)(e.var, pos); },
       [&](ast::LetExpression& e) { (*this)(e.decs, pos); },
       [&](ast::ArrayExpression& e) { (*this)(e.type, pos); },
-      [&](auto& e) {/*noop*/}
+      [&](auto& /* e */) {/*noop*/}
       );
   }
 

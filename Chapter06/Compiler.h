@@ -106,8 +106,6 @@ private:
   struct VariableType
   {
     NamedType               m_type;
-    Translator::Level       m_level;
-    VariableAccess          m_access;
   };
 
   struct FunctionType

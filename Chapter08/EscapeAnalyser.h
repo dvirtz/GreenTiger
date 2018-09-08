@@ -43,7 +43,7 @@ std::enable_if_t<boost::fusion::traits::is_sequence<T>::value> EscapeAnalyser::a
 }
 
 template<typename T>
-std::enable_if_t<!boost::fusion::traits::is_sequence<T>::value> EscapeAnalyser::analyse(T& t)
+std::enable_if_t<!boost::fusion::traits::is_sequence<T>::value> EscapeAnalyser::analyse(T& /* t */)
 {
 }
 

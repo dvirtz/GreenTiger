@@ -85,13 +85,13 @@ Compiler::result_type Compiler::compile(Translator::Level level,
   return CompiledExpression{namedType};
 }
 
-Compiler::result_type Compiler::compile(Translator::Level level,
-                                        const ast::IntExpression &exp) {
+Compiler::result_type Compiler::compile(Translator::Level /* level */,
+                                        const ast::IntExpression &/* exp */) {
   return CompiledExpression{s_intType};
 }
 
-Compiler::result_type Compiler::compile(Translator::Level level,
-                                        const ast::StringExpression &exp) {
+Compiler::result_type Compiler::compile(Translator::Level /* level */,
+                                        const ast::StringExpression &/* exp */) {
   return CompiledExpression{s_stringType};
 }
 
@@ -329,7 +329,7 @@ Compiler::result_type Compiler::compile(Translator::Level level,
   return CompiledExpression{s_voidType};
 }
 
-Compiler::result_type Compiler::compile(Translator::Level level,
+Compiler::result_type Compiler::compile(Translator::Level /* level */,
                                         const ast::BreakExpression &exp) {
   if (!m_withinLoop) {
     return m_errorHandler(id(exp),
@@ -552,15 +552,14 @@ bool Compiler::addToEnv(Translator::Level level,
     var.m_type = compiled->m_type;
   }
 
-  std::tie(var.m_level, var.m_access) =
-      m_translator.allocateLocal(level, dec.escapes);
+  m_translator.allocateLocal(level, dec.escapes);
 
   addToEnv(dec.name, var);
 
   return true;
 }
 
-bool Compiler::addToEnv(Translator::Level level,
+bool Compiler::addToEnv(Translator::Level /* level */,
                         const ast::TypeDeclarations &decs) {
   // first pass, add type names to environment
   // to support recursive types

@@ -10,7 +10,7 @@ template <typename Iterator>
 class StringParser
   : public boost::spirit::qi::grammar<Iterator, Skipper<Iterator>, ast::StringExpression()> {
 public:
-  StringParser(ErrorHandler<Iterator> &errorHandler, Annotation<Iterator>& annotation)
+  StringParser(ErrorHandler<Iterator> &errorHandler, Annotation<Iterator>& /* annotation */)
     : StringParser::base_type(string) {
     namespace spirit = boost::spirit;
     namespace qi = spirit::qi;

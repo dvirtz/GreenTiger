@@ -21,6 +21,7 @@ find_package(Catch2 CONFIG REQUIRED)
 # hunter_add_package(type_safe)
 # find_package(type_safe CONFIG REQUIRED)
 
+include(CompilerWarnings)
 
 option(BUILD_TESTS "Build tests" ON)
 if(BUILD_TESTS)

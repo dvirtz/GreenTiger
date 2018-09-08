@@ -48,7 +48,7 @@ Canonicalizer::makeBasicBlocks(ir::Statements &&statements) const {
   //   a LABEL is found, a new block is started(and the previous block is
   //   ended); Whenever a JUMP or CJUMP is found, a block is ended(and the next
   //   block is started).If this leaves any block not ending with a JUMP or
-  //   CJUMP, then a JUMP to the next block’s label is appended to the block. If
+  //   CJUMP, then a JUMP to the next blockï¿½s label is appended to the block. If
   //   any block has been left without a LABEL at the beginning, a new label is
   //   invented and stuck there.
 
@@ -64,7 +64,7 @@ Canonicalizer::makeBasicBlocks(ir::Statements &&statements) const {
     newBlock.reserve(std::distance(from, to) + 1);
     // make sure block begins with a label
     match(statements.front())(
-        [](temp::Label &label) {
+        [](temp::Label &/* label */) {
           // block already starts with a label
         },
         [&newBlock, this](auto & /*default*/) {
@@ -84,9 +84,9 @@ Canonicalizer::makeBasicBlocks(ir::Statements &&statements) const {
 
   for (auto it = statements.begin(); it != statements.end();) {
     match (*it)(
-        [&](temp::Label &label) { it = insertNewBlock(it); },
-        [&](ir::Jump &jump) { it = insertNewBlock(std::next(it)); },
-        [&](ir::ConditionalJump &jump) { it = insertNewBlock(std::next(it)); },
+        [&](temp::Label &/* label */) { it = insertNewBlock(it); },
+        [&](ir::Jump &/* jump */) { it = insertNewBlock(std::next(it)); },
+        [&](ir::ConditionalJump &/* jump */) { it = insertNewBlock(std::next(it)); },
         [&](auto & /*default*/) { ++it; });
   }
 
@@ -245,7 +245,7 @@ ir::Statement Canonicalizer::reorderStatement(ir::Statement &stm) const {
       },
       [this, &stm](ir::Move &move) {
         return match(move.dst)(
-            [this, &move, &stm](temp::Register &t) {
+            [this, &move, &stm](temp::Register &/* t */) {
               return match(move.src)(
                   [this, &stm](ir::Call &call) {
                     return sequence(reorder(call.args.begin(), call.args.end()),
@@ -291,7 +291,7 @@ Canonicalizer::reorderExpression(ir::Expression &exp) const {
       [this, &exp](ir::MemoryAccess &memAccess) {
         return Reordered{reorder(memAccess.address), exp};
       },
-      [this, &exp](ir::ExpressionSequence &expSequence) {
+      [this](ir::ExpressionSequence &expSequence) {
         auto recurse = reorderExpression(expSequence.exp);
         return Reordered{
             sequence(reorderStatement(expSequence.stm), recurse.m_stm),
@@ -300,7 +300,7 @@ Canonicalizer::reorderExpression(ir::Expression &exp) const {
       [this, &exp](ir::Call &call) {
         return Reordered{reorder(call.args.begin(), call.args.end()), exp};
       },
-      [this, &exp](auto & /*default*/) {
+      [&exp](auto & /*default*/) {
         return Reordered{ir::Statement{}, exp};
       });
 }

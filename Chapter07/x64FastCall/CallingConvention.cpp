@@ -36,8 +36,8 @@ CallingConvention::accessFrame(const VariableAccess &access,
       });
 }
 
-void CallingConvention::allocateString(temp::Label label,
-                                       const std::string &str) {
+void CallingConvention::allocateString(temp::Label /* label */,
+                                       const std::string &/* str */) {
   // TODO
 }
 

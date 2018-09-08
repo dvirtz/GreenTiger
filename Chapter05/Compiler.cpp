@@ -72,12 +72,12 @@ Compiler::result_type Compiler::operator()(const ast::VarExpression & exp)
   return CompiledExpression{ namedType };
 }
 
-Compiler::result_type Compiler::operator()(const ast::IntExpression & exp)
+Compiler::result_type Compiler::operator()(const ast::IntExpression & /* exp */)
 {
   return CompiledExpression{ s_intType };
 }
 
-Compiler::result_type Compiler::operator()(const ast::StringExpression & exp)
+Compiler::result_type Compiler::operator()(const ast::StringExpression & /* exp */)
 {
   return CompiledExpression{ s_stringType };
 }

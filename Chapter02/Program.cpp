@@ -77,21 +77,21 @@ public:
 
     this->self.add_pattern("COM_START", R"(\/\*)")("COM_END", R"(\*\/)");
 
-    auto initStartComment = [this](auto& start, auto& end, auto& matched, auto& id, auto& ctx) {
+    auto initStartComment = [this](auto& /* start */, auto& /* end */, auto& /* matched */, auto& /* id */, auto& ctx) {
       ++m_commentCount;
       ctx.set_state_name("COMMENT");
     };
 
-    auto initEndComment = [this](auto& start, auto& end, auto& matched, auto& id, auto& ctx) {
+    auto initEndComment = [this](auto& /* start */, auto& /* end */, auto& matched, auto& /* id */, auto& /* ctx */) {
       assert(m_commentCount == 0);
       matched = lex::pass_flags::pass_fail;
     };
 
-    auto commentStartComment = [this](auto& start, auto& end, auto& matched, auto& id, auto& ctx) {
+    auto commentStartComment = [this](auto& /* start */, auto& /* end */, auto& /* matched */, auto& /* id */, auto& /* ctx */) {
       ++m_commentCount;
     };
 
-    auto commentEndComment = [this](auto& start, auto& end, auto& matched, auto& id, auto& ctx) {
+    auto commentEndComment = [this](auto& /* start */, auto& /* end */, auto& /* matched */, auto& /* id */, auto& ctx) {
       assert(m_commentCount > 0);
       --m_commentCount;
       if (m_commentCount == 0) {
@@ -99,7 +99,7 @@ public:
       }
     };
 
-    auto print = [this](auto& start, auto& end, auto& matched, auto& id, auto& ctx) {
+    auto print = [](auto& start, auto& end, auto& /* matched */, auto& id, auto& /* ctx */) {
       std::cout << tokenName(static_cast<TokenIds>(id));
       switch (id)
       {

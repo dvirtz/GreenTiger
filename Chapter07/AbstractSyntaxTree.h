@@ -313,7 +313,7 @@ inline std::ostream& operator<<(std::ostream& out, Operation op)
 inline void simplifyTree(ast::Expression& ast) {
   using helpers::match;
 
-  auto noop = [&](auto& e) {};
+  auto noop = [&](auto& /* e */) {};
   auto simplifyVar = [&noop](ast::VarExpression& e) {
     for (auto& ee : e.rest) {
       match(ee)(
@@ -399,7 +399,7 @@ inline void simplifyTree(ast::Expression& ast) {
     );
 }
 
-}; // namespace ast
+} // namespace ast
 
 } // namespace tiger
 

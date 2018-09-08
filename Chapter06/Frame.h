@@ -25,6 +25,7 @@ using AccessList = std::vector<VariableAccess>;
 class Frame
 {
 public:
+  virtual ~Frame() noexcept = default;
   virtual Label name() const = 0;
   virtual AccessList formals() const = 0;
   virtual VariableAccess allocateLocal(bool escapes) = 0;

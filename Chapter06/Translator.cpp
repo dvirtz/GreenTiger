@@ -18,7 +18,7 @@ tiger::Translator::Level Translator::outermost() const
   return 0;
 }
 
-tiger::Translator::Level Translator::newLevel(Level parent, Label label, const BoolList& formals)
+tiger::Translator::Level Translator::newLevel(Level /* parent */, Label label, const BoolList& formals)
 {
   // add static link
   BoolList withStaticLink = formals;

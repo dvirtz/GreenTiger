@@ -65,23 +65,23 @@ tiger::ir::Statement Translator::toStatement(const Expression &exp) {
         return ir::ExpressionStatement{e};
       },
       [](const ir::Statement &stm) { return stm; },
-      [this](const Condition &cond) { return cond.m_statement; });
+      [](const Condition &cond) { return cond.m_statement; });
 }
 
 Condition Translator::toCondition(const Expression &exp) {
   using helpers::match;
   return match(exp)(
-      [this](const ir::Expression &e) {
+      [](const ir::Expression &e) {
         auto cjump = ir::ConditionalJump{ir::RelOp::NE, e, 0,
                                          std::make_shared<temp::Label>(),
                                          std::make_shared<temp::Label>()};
         return Condition{{*cjump.trueDest}, {*cjump.falseDest}, cjump};
       },
-      [](const ir::Statement &stm) {
+      [](const ir::Statement &/* stm */) {
         assert(false && "Can't convert a statement to a condition");
         return Condition{};
       },
-      [this](const Condition &cond) { return cond; });
+      [](const Condition &cond) { return cond; });
 }
 
 Expression Translator::translateVar(const std::vector<Level> &nestingLevels,

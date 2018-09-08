@@ -14,7 +14,7 @@ EscapeAnalyser::result_type EscapeAnalyser::analyse(ast::Expression &exp) {
             [this](bool state, ast::Expression &subexp) {
               return state && this->analyse(subexp);
             },
-            [this](bool state, auto & /*default*/) { return state; });
+            [](bool state, auto & /*default*/) { return state; });
       });
 }
 
