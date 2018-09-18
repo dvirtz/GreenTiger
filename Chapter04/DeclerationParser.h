@@ -3,7 +3,10 @@
 #include "Skipper.h"
 #include "Annotation.h"
 
+#include "warning_suppress.h"
+MSC_DIAG_OFF(4996 4459)
 #include <boost/spirit/include/qi.hpp>
+MSC_DIAG_ON()
 #include <boost/spirit/include/phoenix_stl.hpp>
 #include <boost/spirit/include/phoenix_fusion.hpp>
 

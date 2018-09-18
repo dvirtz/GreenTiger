@@ -1,5 +1,8 @@
 #pragma once
+#include "warning_suppress.h"
+MSC_DIAG_OFF(4996 4459)
 #include <boost/spirit/include/qi.hpp>
+MSC_DIAG_ON()
 
 namespace tiger {
 template <typename Iterator> class Skipper : public boost::spirit::qi::grammar<Iterator> {

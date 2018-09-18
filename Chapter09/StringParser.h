@@ -2,7 +2,10 @@
 #include "ErrorHandler.h"
 #include "Annotation.h"
 #include "Skipper.h"
+#include "warning_suppress.h"
+MSC_DIAG_OFF(4996 4459)
 #include <boost/spirit/include/qi.hpp>
+MSC_DIAG_ON()
 #include <boost/spirit/include/phoenix_bind.hpp>
 
 namespace tiger {

@@ -5,8 +5,6 @@
 #include <string>
 #include <vector>
 #include <range/v3/view/any_view.hpp>
-#include <range/v3/view/intersperse.hpp>
-#include <range/v3/action/join.hpp>
 
 namespace tiger {
 
@@ -26,13 +24,7 @@ struct Operation {
             const Registers &destinations = {}, 
             const Registers &sources = {}, 
             const Labels &labels = {}, 
-            const Immediates &immediates = {}) 
-            : m_syntax{syntaxes | ranges::view::intersperse("\n") | ranges::action::join}, 
-            m_destinations{destinations}, 
-            m_sources{sources}, 
-            m_jumps{labels}, 
-            m_immediates{immediates} 
-  {}
+            const Immediates &immediates = {});
 };
 
 struct Label {

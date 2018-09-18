@@ -2,12 +2,20 @@
 #include "CallingConvention.h"
 #include "TreeAdapted.h"
 #include "variantMatch.h"
+#include "warning_suppress.h"
 #include <boost/fusion/include/algorithm.hpp>
 #include <boost/fusion/include/make_vector.hpp>
 #include <boost/fusion/include/zip_view.hpp>
 #include <boost/optional.hpp>
+MSC_DIAG_OFF(4996 4459 4456)
 #include <boost/spirit/include/karma.hpp>
-#include <range/v3/all.hpp>
+MSC_DIAG_ON()
+#include <range/v3/algorithm/for_each.hpp>
+MSC_DIAG_OFF(4913)
+#include <range/v3/algorithm/move.hpp>
+MSC_DIAG_ON()
+#include <range/v3/action/push_back.hpp>
+#include <range/v3/view/transform.hpp>
 #include <regex>
 #include <sstream>
 

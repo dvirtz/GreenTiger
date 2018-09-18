@@ -7,7 +7,10 @@
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_object.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
+#include "warning_suppress.h"
+MSC_DIAG_OFF(4996 4459)
 #include <boost/spirit/include/qi.hpp>
+MSC_DIAG_ON()
 
 namespace tiger {
 

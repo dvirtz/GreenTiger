@@ -859,7 +859,7 @@ in
   for a := 0 to 4 do f(a)
 end
 )");
-  OptReg rv, a, limit, rcx = reg(Registers::RCX);
+  OptReg a, limit, rcx = reg(Registers::RCX);
   OptLabel functionLabel, loopStart, loopDone, functionEnd;
   checkProgram(
       checkMove( // move 0 to a

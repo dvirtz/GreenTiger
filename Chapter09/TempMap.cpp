@@ -8,7 +8,10 @@
 #include "TempMap.h"
 #include <boost/optional.hpp>
 #include <ostream>
+#include "warning_suppress.h"
+MSC_DIAG_OFF(4913)
 #include <range/v3/algorithm/copy.hpp>
+MSC_DIAG_ON()
 
 namespace tiger {
 
