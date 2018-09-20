@@ -3,7 +3,9 @@
 
 namespace tiger {
 namespace assembly {
-class MachineInstruction;
+struct Instruction;
+using Instructions = std::vector<Instruction>;
+using Registers = std::vector<temp::Register>;
 }
 
 namespace frame {
@@ -20,14 +22,21 @@ public:
 
   virtual temp::Register returnValue() const = 0;
 
-  virtual ir::Expression accessFrame(const VariableAccess &access,
-                                     const ir::Expression &framePtr) const = 0;
+  virtual temp::Register stackPointer() const = 0;
 
-  virtual ir::Expression
+  virtual assembly::Registers callDefinedRegisters() const = 0;
+
+  virtual assembly::Registers calleeSavedRegisters() const = 0;
+
+  ir::Expression accessFrame(const VariableAccess &access,
+                                     const ir::Expression &framePtr) const;
+
+  ir::Expression
   externalCall(const temp::Label &name,
-               const std::vector<ir::Expression> &args) = 0;
+               const std::vector<ir::Expression> &args);
 
-  virtual std::vector<temp::Register> callDefinedRegisters() const = 0;
+  // calculate register liveness
+  assembly::Instructions procEntryExit2(const assembly::Instructions &body) const;
 };
 } // namespace frame
 } // namespace tiger

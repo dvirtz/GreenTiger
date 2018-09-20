@@ -22,25 +22,17 @@ temp::Register CallingConvention::returnValue() const {
   return reg(Registers::RAX);
 }
 
-ir::Expression
-CallingConvention::accessFrame(const VariableAccess &access,
-                               const ir::Expression &framePtr) const {
-  using helpers::match;
-  return match(access)(
-      [](const frame::InReg &inReg) -> ir::Expression { return inReg.m_reg; },
-      [&framePtr](const frame::InFrame &inFrame) -> ir::Expression {
-        return ir::MemoryAccess{
-            ir::BinaryOperation{ir::BinOp::PLUS, framePtr, inFrame.m_offset}};
-      });
-}
-
-ir::Expression
-CallingConvention::externalCall(const temp::Label &name,
-                                const std::vector<ir::Expression> &args) {
-  return ir::Call{name, args};
+temp::Register CallingConvention::stackPointer() const
+{
+  return reg(Registers::RSP);
 }
 
 std::vector<temp::Register> CallingConvention::callDefinedRegisters() const {
+  return {};
+}
+
+assembly::Registers CallingConvention::calleeSavedRegisters() const
+{
   return {};
 }
 

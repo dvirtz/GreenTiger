@@ -7,6 +7,11 @@
 
 namespace tiger {
 
+namespace assembly {
+struct Instruction;
+using Instructions = std::vector<Instruction>;
+}
+
 namespace frame {
 
 using BoolList = boost::dynamic_bitset<>;
@@ -33,7 +38,11 @@ public:
   virtual temp::Label name() const = 0;
   virtual const AccessList &formals() const = 0;
   virtual VariableAccess allocateLocal(bool escapes) = 0;
-  virtual ir::Statement procEntryExit1(const ir::Statement& body) = 0;
+  // move input parameters to the function frame
+  // store and restore callee saved registers
+  virtual ir::Statement procEntryExit1(const ir::Statement& body) const = 0;
+  // add prolog and epilog
+  virtual assembly::Instructions procEntryExit3(const assembly::Instructions &body) const = 0;
 protected:
   temp::Map& m_tempMap;
 };

@@ -1,5 +1,6 @@
 #include "x64Frame.h"
 #include "variantMatch.h"
+#include "Assembly.h"
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
 
@@ -42,7 +43,11 @@ VariableAccess Frame::allocateLocal(bool escapes) {
   return InReg{m_tempMap.newTemp()};
 }
 
-ir::Statement Frame::procEntryExit1(const ir::Statement &body) { return body; }
+ir::Statement Frame::procEntryExit1(const ir::Statement &body) const { return body; }
+
+assembly::Instructions Frame::procEntryExit3(const assembly::Instructions &body) const {
+  return body;
+}
 
 } // namespace x64
 } // namespace frame

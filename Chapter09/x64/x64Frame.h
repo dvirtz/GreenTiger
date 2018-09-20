@@ -22,7 +22,9 @@ public:
 
   virtual VariableAccess allocateLocal(bool escapes) override;
 
-  virtual ir::Statement procEntryExit1(const ir::Statement& body) override;
+  virtual ir::Statement procEntryExit1(const ir::Statement& body) const override;
+
+  assembly::Instructions procEntryExit3(const assembly::Instructions &body) const override;
 
 private:
   temp::Label m_name;

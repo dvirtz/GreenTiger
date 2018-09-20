@@ -44,7 +44,6 @@ CodeGenerator::CodeGenerator(frame::CallingConvention &callingConvention,
 Instructions CodeGenerator::translateFunction(const ir::Statements &statements,
                                               temp::Map &tempMap) const
 {
-  dump(statements, tempMap);
   Instructions instructions;
   ranges::for_each(statements, [&](const ir::Statement &statement) {
     auto matched = match(statement, tempMap);

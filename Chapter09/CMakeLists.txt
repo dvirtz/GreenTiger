@@ -15,7 +15,7 @@ endforeach()
 configure_file(MachineRegistration.h.in MachineRegistration.h)
 
 set(SOURCES Program.cpp SemanticAnalyzer.cpp TempMap.cpp EscapeAnalyser.cpp Translator.cpp Tree.cpp Canonicalizer.cpp Assembly.cpp 
-  CodeGenerator.cpp)
+  CodeGenerator.cpp CallingConvention.cpp)
 set(HEADERS Program.h ErrorHandler.h ExpressionParser.h Skipper.h IdentifierParser.h DeclerationParser.h AbstractSyntaxTree.h 
   Annotation.h StringParser.h SemanticAnalyzer.h Types.h TempMap.h Frame.h CallingConvention.h EscapeAnalyser.h Translator.h Tree.h 
   Fragment.h  Canonicalizer.h Assembly.h CodeGenerator.h MachineRegistrar.h)

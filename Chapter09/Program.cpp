@@ -65,7 +65,8 @@ CompileResult compile(const std::string &arch, Iterator &first,
                 [&](FunctionFragment &function) {
                   auto canonicalized =
                       canonicalizer.canonicalize(std::move(function.m_body));
-                  return codeGenerator.translateFunction(canonicalized, tempMap);
+                  auto translated = codeGenerator.translateFunction(canonicalized, tempMap);
+                  return function.m_frame->procEntryExit3(callingConvention.procEntryExit2(translated));
                 },
                 [&](StringFragment &str) {
                   return codeGenerator.translateString(

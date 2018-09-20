@@ -16,14 +16,15 @@ public:
   Frame(temp::Map &tempMap, const temp::Label &name, const BoolList &formals);
   
   // Inherited via Frame
-  virtual temp::Label name() const override;
+  temp::Label name() const override;
 
-  virtual const AccessList &formals() const override;
+  const AccessList &formals() const override;
 
-  virtual VariableAccess allocateLocal(bool escapes) override;
+  VariableAccess allocateLocal(bool escapes) override;
 
-  virtual ir::Statement procEntryExit1(const ir::Statement& body) override;
+  ir::Statement procEntryExit1(const ir::Statement& body) const override;
 
+  assembly::Instructions procEntryExit3(const assembly::Instructions &body) const override;
 private:
   temp::Label m_name;
   AccessList m_formals;
