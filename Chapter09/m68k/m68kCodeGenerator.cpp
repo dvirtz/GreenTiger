@@ -66,10 +66,10 @@ Instructions CodeGenerator::translateString(const temp::Label &label,
                                             temp::Map & /* tempMap */)
 {
     return {Label{"`l0:", label},
-            Operation{{"ds.b `l0"}, {}, {}, {temp::Label{escape(string)}}}};
+            Operation{{".string" + escape(string)}}};
 }
 
-Instructions CodeGenerator::translateArgs(const std::vector<ir::Expression> &args) const
+Instructions CodeGenerator::translateArgs(const std::vector<ir::Expression> &args, const temp::Map &/* tempMap */) const
 {
     return args | ranges::view::transform([](const ir::Expression &arg) { return helpers::match(arg)(
                                                                               [](int i) {

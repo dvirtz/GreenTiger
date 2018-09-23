@@ -8,9 +8,6 @@ namespace tiger {
 namespace frame {
 namespace x64 {
 
-std::array<Registers, Frame::MAX_REGS> Frame::m_regParams = {
-    Registers::RCX, Registers::RDX, Registers::R8, Registers::R9};
-
 Frame::Frame(temp::Map &tempMap, const temp::Label &name,
              const BoolList &formals)
     : frame::Frame(tempMap), m_name(name) {
@@ -23,7 +20,7 @@ Frame::Frame(temp::Map &tempMap, const temp::Label &name,
       }
 
       assert(m_allocatedRegs < MAX_REGS);
-      return InReg{reg(m_regParams[m_allocatedRegs++])};
+      return InReg{m_tempMap.newTemp()};
     }(formals[i]);
     m_formals.push_back(varAccess);
   }

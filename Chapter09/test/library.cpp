@@ -32,7 +32,7 @@ TEST_CASE("standard library")
     SECTION("print")
     {
         OptLabel stringLabel;
-        checkLibraryCall("print", emptyString, checkArg(checkString(stringLabel)), {}, checkStringInit(stringLabel, emptyString));
+        checkLibraryCall("print", emptyString, checkArg(1, checkString(stringLabel)), {}, checkStringInit(stringLabel, emptyString));
     }
 
     // function flush()
@@ -46,13 +46,13 @@ TEST_CASE("standard library")
     {
         OptLabel stringLabel;
         checkLibraryCall("ord", emptyString,
-                         checkArg(checkString(stringLabel)), "int"s, checkStringInit(stringLabel, emptyString));
+                         checkArg(1, checkString(stringLabel)), "int"s, checkStringInit(stringLabel, emptyString));
     }
 
     // function chr(i: int) : string
     SECTION("chr")
     {
-        checkLibraryCall("chr", "0", checkArg(checkImm(0)), "string"s);
+        checkLibraryCall("chr", "0", checkArg(1, checkImm(0)), "string"s);
     }
 
     // function size(s: string) : int
@@ -60,7 +60,7 @@ TEST_CASE("standard library")
     {
         OptLabel stringLabel;
         checkLibraryCall("size", emptyString,
-                         checkArg(checkString(stringLabel)), "int"s, checkStringInit(stringLabel, emptyString));
+                         checkArg(1, checkString(stringLabel)), "int"s, checkStringInit(stringLabel, emptyString));
     }
 
     // function substring(s:string, first:int, n:int) : string
@@ -68,8 +68,8 @@ TEST_CASE("standard library")
     {
         OptLabel stringLabel;
         checkLibraryCall("substring", emptyString + ", 1, 2",
-                         checkArg(checkString(stringLabel)) > checkArg(checkImm(1)) >
-                             checkArg(checkImm(2)),
+                         checkArg(1, checkString(stringLabel)) > checkArg(2, checkImm(1)) >
+                             checkArg(3, checkImm(2)),
                          "string"s, checkStringInit(stringLabel, emptyString));
     }
 
@@ -78,12 +78,12 @@ TEST_CASE("standard library")
     {
         OptLabel stringLabel[2];
         checkLibraryCall("concat", emptyString + ", " + emptyString,
-                         checkArg(checkString(stringLabel[0])) > checkArg(checkString(stringLabel[1])), "string"s, checkStringInit(stringLabel[0], emptyString) > checkStringInit(stringLabel[1], emptyString));
+                         checkArg(1, checkString(stringLabel[0])) > checkArg(2, checkString(stringLabel[1])), "string"s, checkStringInit(stringLabel[0], emptyString) > checkStringInit(stringLabel[1], emptyString));
     }
 
     // function not(i : integer) : integer
-    SECTION("not") { checkLibraryCall("not", "3", checkArg(checkImm(3)), "int"s); }
+    SECTION("not") { checkLibraryCall("not", "3", checkArg(1, checkImm(3)), "int"s); }
 
     // function exit(i: int)
-    SECTION("exit") { checkLibraryCall("exit", "5", checkArg(checkImm(5))); }
+    SECTION("exit") { checkLibraryCall("exit", "5", checkArg(1, checkImm(5))); }
 }

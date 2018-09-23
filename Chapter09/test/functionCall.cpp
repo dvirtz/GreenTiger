@@ -35,7 +35,7 @@ end
   end
   )");
         checkProgram(program, checkLocalCall( // call
-                                  checkLabel(functionLabel), staticLink, temps, checkArg(checkImm(2))),
+                                  checkLabel(functionLabel), staticLink, temps, checkArg(1, checkImm(2))),
                      x3::eps,
                      checkLabel(functionLabel) > ':' > // function label,
                          checkMove(                    // body

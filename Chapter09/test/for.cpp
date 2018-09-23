@@ -19,7 +19,7 @@ end
                      checkConditionalJump( // skip the loop if a > limit
                          ir::RelOp::GT, regs[0], regs[1], loopDone) > checkLabel(loopStart) > ':' >
                      checkLocalCall( // f(a)
-                         checkLabel(functionLabel), staticLink, temps, checkArg(checkReg(regs[0]))) >
+                         checkLabel(functionLabel), staticLink, temps, checkArg(1, checkReg(regs[0]))) >
                      checkMove(checkReg(regs[2]), checkImm(1)) >
                      checkBinaryOperation(ir::BinOp::PLUS, checkReg(regs[0]), checkReg(regs[2]), regs[3]) >
                      checkMove( // a := a + 1

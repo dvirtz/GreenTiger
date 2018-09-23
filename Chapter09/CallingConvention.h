@@ -1,15 +1,19 @@
 #pragma once
 #include "Frame.h"
 
-namespace tiger {
-namespace assembly {
+namespace tiger
+{
+namespace assembly
+{
 struct Instruction;
 using Instructions = std::vector<Instruction>;
 using Registers = std::vector<temp::Register>;
-}
+} // namespace assembly
 
-namespace frame {
-class CallingConvention {
+namespace frame
+{
+class CallingConvention
+{
 public:
   virtual ~CallingConvention() = default;
 
@@ -28,8 +32,10 @@ public:
 
   virtual assembly::Registers calleeSavedRegisters() const = 0;
 
+  virtual assembly::Registers argumentRegisters() const = 0;
+
   ir::Expression accessFrame(const VariableAccess &access,
-                                     const ir::Expression &framePtr) const;
+                             const ir::Expression &framePtr) const;
 
   ir::Expression
   externalCall(const temp::Label &name,

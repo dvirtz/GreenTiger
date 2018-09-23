@@ -28,7 +28,7 @@ end
 )");
         OptReg regs[3], temps[4];
         checkProgram(program,
-                     checkExternalCall("malloc", checkArg(checkImm(wordSize()))) >
+                     checkExternalCall("malloc", checkArg(0, checkImm(wordSize()))) >
                          checkMove( // move result of malloc(record_size) to base reg
 
                              checkReg(regs[0]), returnReg()) >
@@ -55,11 +55,11 @@ end
                      checkMove(checkReg(regs[0]), checkImm(wordSize())) >
                          checkMove(checkReg(regs[1]), checkImm(3)) >
                          checkBinaryOperation(ir::BinOp::MUL, checkReg(regs[0]), checkReg(regs[1]), regs[2]) >
-                         checkExternalCall("malloc", checkArg(checkReg(regs[2]))) >
+                         checkExternalCall("malloc", checkArg(0, checkReg(regs[2]))) >
                          checkMove( // set base reg to result of malloc(array size),
                              checkReg(regs[3]), returnReg()) >
                          checkExternalCall( // call initArray(array size, array init val)
-                             "initArray", checkArg(checkImm(3)) > checkArg(checkString(stringLabel))) >
+                             "initArray", checkArg(0, checkImm(3)) > checkArg(1, checkString(stringLabel))) >
                          checkMove(checkReg(regs[4]), // move base reg to a
                                    checkReg(regs[3])) >
                          checkMove(returnReg(), checkImm(0)),
@@ -79,7 +79,7 @@ end
 )");
             OptReg regs[7], accessTemps[3][4], addressTemps[3];
             checkProgram(program,
-                         checkExternalCall("malloc", checkArg(checkImm(2 * wordSize()))) >
+                         checkExternalCall("malloc", checkArg(0, checkImm(2 * wordSize()))) >
                              checkMove( // move result of malloc(record_size) to base reg
                                  checkReg(regs[0]), returnReg()) >
                              checkMemberAccess(regs[0], 0, regs[1], accessTemps[0]) >
@@ -88,7 +88,7 @@ end
                              checkMemberAddress(regs[0], 1, regs[2], addressTemps) >
                              checkMove( // move address of second member to a register
                                  checkReg(regs[3]), checkReg(regs[2])) >
-                             checkExternalCall("malloc", checkArg(checkImm(2 * wordSize()))) >
+                             checkExternalCall("malloc", checkArg(0, checkImm(2 * wordSize()))) >
                              checkMove( // move result of malloc(record_size)
                                         // to a base register
                                  checkReg(regs[4]), returnReg()) >
@@ -116,7 +116,7 @@ end
     )");
             OptReg regs[11], accessTemps[4][4], addressTemps[2][3];
             checkProgram(program,
-                         checkExternalCall("malloc", checkArg(checkImm(2 * wordSize()))) >
+                         checkExternalCall("malloc", checkArg(0, checkImm(2 * wordSize()))) >
                              checkMove( // move result of malloc(record_size) to a base register
                                  checkReg(regs[0]), returnReg()) >
                              checkMemberAccess(regs[0], 0, regs[1], accessTemps[0]) >
@@ -125,13 +125,13 @@ end
                              checkMemberAddress(regs[0], 1, regs[2], addressTemps[0]) >
                              checkMove( // move address of second member to a register
                                  checkReg(regs[3]), checkReg(regs[2])) >
-                             checkExternalCall("malloc", checkArg(checkImm(2 * wordSize()))) >
+                             checkExternalCall("malloc", checkArg(0, checkImm(2 * wordSize()))) >
                              checkMove( // move result of malloc(record_size) to a base register
                                  checkReg(regs[4]), returnReg()) >
                              checkMemberAddress(regs[4], 0, regs[5], addressTemps[1]) >
                              checkMove( // move address of first member to a register
                                  checkReg(regs[6]), checkReg(regs[5])) >
-                             checkExternalCall("malloc", checkArg(checkImm(2 * wordSize()))) >
+                             checkExternalCall("malloc", checkArg(0, checkImm(2 * wordSize()))) >
                              checkMove( // move result of
                                         // malloc(record_size) to
                                         // a register

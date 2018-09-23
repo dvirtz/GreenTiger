@@ -46,6 +46,11 @@ assembly::Registers CallingConvention::calleeSavedRegisters() const
   return {reg(Registers::A2), reg(Registers::A3), reg(Registers::A4), reg(Registers::A5), reg(Registers::A6), reg(Registers::A7),
           reg(Registers::D2), reg(Registers::D3), reg(Registers::D4), reg(Registers::D5), reg(Registers::D6), reg(Registers::D7)};
 }
+
+assembly::Registers CallingConvention::argumentRegisters() const {
+  return {};
+}
+
 } // namespace m68k
 } // namespace frame
 } // namespace tiger

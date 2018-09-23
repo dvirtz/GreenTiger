@@ -15,7 +15,7 @@ function(add_chapter09_test name)
       testMain
   )
   
-  parse_unit_tests(${name} --timeout 10 ARCHS m68k)
+  parse_unit_tests(${name} --timeout 10 ARCHS m68k x64)
 endfunction()
 
 add_chapter09_test(compileFiles)

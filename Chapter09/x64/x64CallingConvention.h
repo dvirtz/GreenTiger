@@ -22,6 +22,8 @@ public:
   std::vector<temp::Register> callDefinedRegisters() const override;
 
   assembly::Registers calleeSavedRegisters() const override;
+
+  assembly::Registers argumentRegisters() const override;
 };
 } // namespace x64
 } // namespace frame

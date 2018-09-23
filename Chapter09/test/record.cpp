@@ -12,7 +12,7 @@ in
 end
 )");
         OptReg regs[2];
-        checkProgram(program, checkExternalCall("malloc", checkArg(checkImm(0))) >
+        checkProgram(program, checkExternalCall("malloc", checkArg(0, checkImm(0))) >
                                   checkMove( // move result of malloc(record_size) to
                                       checkReg(regs[1]), returnReg()) >
                                   checkMove(returnReg(), checkReg(regs[1])));
@@ -31,7 +31,7 @@ end
         OptReg regs[4], temps[2][4];
         OptLabel stringLabel;
         checkProgram(program,
-                     checkExternalCall("malloc", checkArg(checkImm(2 *
+                     checkExternalCall("malloc", checkArg(0, checkImm(2 *
                                                                    wordSize()))) >
                          checkMove(checkReg(regs[1]), // move result of malloc(record_size) to r
                                    returnReg()) >

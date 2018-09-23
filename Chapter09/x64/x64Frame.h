@@ -32,7 +32,6 @@ private:
   int m_frameOffset = -WORD_SIZE;
   // The __fastcall convention uses registers for the first four arguments
   static const size_t MAX_REGS = 4;
-  static std::array<Registers, MAX_REGS> m_regParams;
   size_t m_allocatedRegs = 0;
 };
 } // namespace x64

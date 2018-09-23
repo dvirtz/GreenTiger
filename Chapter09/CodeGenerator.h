@@ -49,14 +49,15 @@ public:
 protected:
   std::string escape(const std::string &str) const;
 
+  frame::CallingConvention &m_callingConvention;
+
 private:
   boost::optional<Instructions> match(const ir::Statement &statement, temp::Map &tempMap) const;
 
-  virtual Instructions translateArgs(const std::vector<ir::Expression> &args) const = 0;
+  virtual Instructions translateArgs(const std::vector<ir::Expression> &args, const temp::Map &tempMap) const = 0;
 
   friend struct DagMatcher;
 
-  frame::CallingConvention &m_callingConvention;
   Patterns m_patterns;
 };
 

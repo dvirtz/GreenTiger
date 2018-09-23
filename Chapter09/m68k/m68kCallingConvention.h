@@ -22,6 +22,8 @@ public:
   assembly::Registers callDefinedRegisters() const override;
 
   assembly::Registers calleeSavedRegisters() const override;
+
+  assembly::Registers argumentRegisters() const override;
 };
 } // namespace m68k
 } // namespace frame

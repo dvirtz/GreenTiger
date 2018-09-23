@@ -352,7 +352,7 @@ bool DagMatcher::match(const ir::Call &code, const ir::Call &pattern,
     return false;
   }
 
-  ranges::move(m_codeGenerator.translateArgs(args),
+  ranges::move(m_codeGenerator.translateArgs(args, m_tempMap),
                ranges::back_inserter(matchData.m_instructions));
   ranges::push_back(matchData.m_destinations, m_codeGenerator.m_callingConvention.callDefinedRegisters());
   return true;

@@ -13,7 +13,7 @@ public:
                                temp::Map &tempMap) override;
 
 private:
-  Instructions translateArgs(const std::vector<ir::Expression> &args) const override;
+  Instructions translateArgs(const std::vector<ir::Expression> &args, const temp::Map &tempMap) const override;
 };
 } // namespace m68k
 } // namespace assembly

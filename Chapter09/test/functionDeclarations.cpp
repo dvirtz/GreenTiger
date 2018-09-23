@@ -102,7 +102,7 @@ end
                              checkMove(checkReg(regs[16]), checkImm(1)) >
                              checkBinaryOperation(ir::BinOp::MINUS, checkReg(regs[13]),
                                                   checkReg(regs[16]), regs[5]) >
-                             checkCall(checkLabel(functionLabel), checkArg(checkReg(staticLinks[0][0])) > checkArg(checkReg(regs[5]))) >
+                             checkCall(checkLabel(functionLabel), checkArg(0, checkReg(staticLinks[0][0])) > checkArg(1, checkReg(regs[5]))) >
                              checkMove( // fib(n-1)
                                  checkReg(regs[6]), returnReg()) >
                              checkMove(checkReg(regs[7]), checkReg(regs[6])) >
@@ -111,7 +111,7 @@ end
                              checkMove(checkReg(regs[8]), checkImm(2)) >
                              checkBinaryOperation(ir::BinOp::MINUS, checkReg(regs[14]),
                                                   checkReg(regs[8]), regs[9]) >
-                             checkCall(checkLabel(functionLabel), checkArg(checkReg(staticLinks[1][0])) > checkArg(checkReg(regs[9]))) >
+                             checkCall(checkLabel(functionLabel), checkArg(0, checkReg(staticLinks[1][0])) > checkArg(1, checkReg(regs[9]))) >
                              checkMove( // fib(n-2)
                                  checkReg(regs[10]), returnReg()) >
                              // add two previous calls
@@ -128,7 +128,7 @@ end
                              checkJump(joinDest[0]) >
                              checkLabel( // then
                                  trueDest[2]) > ':' >
-                             checkMove(checkReg(regs[17]), checkInlineParameterAccess(0, regs[2])) >
+                             checkMove(checkReg(regs[17]), checkInlineParameterAccess(0, regs[1])) >
                              checkJump(joinDest[2]) >
                              checkLabel(functionEnd) > ':');
         }
@@ -150,16 +150,16 @@ end
                          checkLabel(fStart) > ':' >
                              checkStaticLink(staticLinks[0], temps[0]) >
                              checkCall(checkLabel(gStart),
-                                       checkArg(checkReg(staticLinks[0][0])) > checkArg(checkImm(1))) >
+                                       checkArg(0, checkReg(staticLinks[0][0])) > checkArg(1, checkImm(1))) >
                              branchToEnd(fEnd) >
                              checkLabel(gStart) > ':' >
                              checkStaticLink(staticLinks[1], temps[1]) >
                              checkCall(checkLabel(hStart),
-                                       checkArg(checkReg(staticLinks[1][0])) > checkArg(checkImm(2))) >
+                                       checkArg(0, checkReg(staticLinks[1][0])) > checkArg(1, checkImm(2))) >
                              branchToEnd(gEnd) > checkLabel(hStart) > ':' >
                              checkStaticLink(staticLinks[2], temps[2]) >
                              checkCall(checkLabel(fStart),
-                                       checkArg(checkReg(staticLinks[2][0])) > checkArg(checkImm(3))) >
+                                       checkArg(0, checkReg(staticLinks[2][0])) > checkArg(1, checkImm(3))) >
                              branchToEnd(hEnd));
         }
     }
@@ -185,14 +185,14 @@ end
         OptLabel f, fEnd, g, gEnd;
         checkProgram(program,
                      checkLocalCall( // f(3)
-                         checkLabel(f), staticLinks[0], temps[0], checkArg(checkImm(3))),
+                         checkLabel(f), staticLinks[0], temps[0], checkArg(1, checkImm(3))),
                      x3::eps,
                      checkLabel(g) > ':' >
                          // i is fetched from f's frame
                          checkMove(checkReg(regs[0]), checkImm(-wordSize())) >
                          checkBinaryOperation(ir::BinOp::PLUS, framePointer(), checkReg(regs[0]), regs[1]) >
                          checkMove(checkReg(regs[2]), checkMemoryAccess(checkReg(regs[1]))) >
-                         checkParameterAcess(0, checkReg(regs[2]), accessTemps, regs[3]) >
+                         checkParameterAcess(0, checkReg(regs[2]), accessTemps, regs[3], true) >
                          // i+2
                          checkMove(checkReg(regs[4]), checkImm(2)) >
                          checkBinaryOperation(
