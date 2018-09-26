@@ -1,14 +1,12 @@
 #include "Test.h"
 
-TEST_CASE("function call")
-{
-    OptLabel functionLabel, functionEnd;
-    OptReg temps[2];
-    OptReg staticLink;
+TEST_CASE("function call") {
+  OptLabel functionLabel, functionEnd;
+  OptReg temps[2];
+  OptReg staticLink;
 
-    SECTION("with no arguments")
-    {
-        auto program = checkedCompile(R"(
+  SECTION("with no arguments") {
+    auto program = checkedCompile(R"(
 let
  function f() = ()
 in
@@ -16,30 +14,32 @@ in
 end
 )");
 
-        checkProgram(program,
-                     checkLocalCall( // call
-                         checkLabel(functionLabel), staticLink, temps),
-                     x3::eps,
-                     checkLabel(functionLabel) > ':' > // function label
-                         checkMove(                    // body
-                             returnReg(), checkImm(0)) > branchToEnd(functionEnd));
-    }
+    checkProgram(program,
+                 checkLocalCall( // call
+                   checkLabel(functionLabel), staticLink, temps),
+                 x3::eps,
+                 checkLabel(functionLabel) > ':' > // function label
+                   checkMove(                      // body
+                     returnReg(), checkImm(0))
+                   > branchToEnd(functionEnd));
+  }
 
-    SECTION("with arguments")
-    {
-        auto program = checkedCompile(R"(
+  SECTION("with arguments") {
+    auto program = checkedCompile(R"(
   let
    function f(a: int) = ()
   in
    f(2)
   end
   )");
-        checkProgram(program, checkLocalCall( // call
-                                  checkLabel(functionLabel), staticLink, temps, checkArg(1, checkImm(2))),
-                     x3::eps,
-                     checkLabel(functionLabel) > ':' > // function label,
-                         checkMove(                    // body
-                             returnReg(), checkImm(0)) >
-                         branchToEnd(functionEnd));
-    }
+    checkProgram(
+      program,
+      checkLocalCall( // call
+        checkLabel(functionLabel), staticLink, temps, checkArg(1, checkImm(2))),
+      x3::eps,
+      checkLabel(functionLabel) > ':' > // function label,
+        checkMove(                      // body
+          returnReg(), checkImm(0))
+        > branchToEnd(functionEnd));
+  }
 }

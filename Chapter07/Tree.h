@@ -43,19 +43,19 @@ struct ExpressionSequence;
 struct Call;
 struct MemoryAccess;
 
-using Expression = boost::variant<int, temp::Label, temp::Register,
-                                  boost::recursive_wrapper<BinaryOperation>,
-                                  boost::recursive_wrapper<MemoryAccess>,
-                                  boost::recursive_wrapper<ExpressionSequence>,
-                                  boost::recursive_wrapper<Call>>;
+using Expression = boost::variant<
+  int, temp::Label, temp::Register, boost::recursive_wrapper<BinaryOperation>,
+  boost::recursive_wrapper<MemoryAccess>,
+  boost::recursive_wrapper<ExpressionSequence>, boost::recursive_wrapper<Call>>;
 
 struct Sequence {
   std::vector<Statement> statements;
 
-  // cannot make the initializer_list ctor default because of https://gcc.gnu.org/bugzilla/show_bug.cgi?id=60437
+  // cannot make the initializer_list ctor default because of
+  // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=60437
   Sequence() = default;
-  Sequence(std::initializer_list<Statement> statements)
-      : statements(statements) {}
+  Sequence(std::initializer_list<Statement> statements) :
+      statements(statements) {}
 };
 
 struct Jump {

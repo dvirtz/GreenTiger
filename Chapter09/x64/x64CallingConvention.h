@@ -7,9 +7,9 @@ namespace frame {
 namespace x64 {
 class CallingConvention final : public frame::CallingConvention {
 public:
-  std::unique_ptr<frame::Frame>
-  createFrame(temp::Map &tempMap, const temp::Label &name,
-              const BoolList &formals) override;
+  std::unique_ptr<frame::Frame> createFrame(temp::Map &tempMap,
+                                            const temp::Label &name,
+                                            const BoolList &formals) override;
 
   int wordSize() const override;
 

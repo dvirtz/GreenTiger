@@ -20,22 +20,21 @@ struct InReg {
 };
 
 using VariableAccess = boost::variant<InFrame, InReg>;
-using AccessList = std::vector<VariableAccess>;
+using AccessList     = std::vector<VariableAccess>;
 
 class Frame {
 public:
-  Frame(temp::Map& tempMap)
-    : m_tempMap(tempMap)
-  {}
+  Frame(temp::Map &tempMap) : m_tempMap(tempMap) {}
 
   virtual ~Frame() noexcept = default;
 
-  virtual temp::Label name() const = 0;
-  virtual const AccessList &formals() const = 0;
-  virtual VariableAccess allocateLocal(bool escapes) = 0;
-  virtual ir::Statement procEntryExit1(const ir::Statement& body) = 0;
+  virtual temp::Label name() const                                = 0;
+  virtual const AccessList &formals() const                       = 0;
+  virtual VariableAccess allocateLocal(bool escapes)              = 0;
+  virtual ir::Statement procEntryExit1(const ir::Statement &body) = 0;
+
 protected:
-  temp::Map& m_tempMap;
+  temp::Map &m_tempMap;
 };
 
 } // namespace frame

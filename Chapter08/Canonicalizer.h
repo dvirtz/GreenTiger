@@ -1,6 +1,6 @@
 #pragma once
-#include "Tree.h"
 #include "Fragment.h"
+#include "Tree.h"
 #include "type_traits.h"
 
 namespace tiger {
@@ -17,7 +17,8 @@ public:
                 frame::CallingConvention &callingConvention);
 
   // reduce program to a list of statements
-  ir::Statements canonicalize(ir::Expression &&program, FragmentList &&fragments);
+  ir::Statements canonicalize(ir::Expression &&program,
+                              FragmentList &&fragments);
 
 private:
   // removes the ESEQs and moves the CALLs to top level
@@ -38,7 +39,7 @@ private:
   // big ir::Statement
   template <typename T, typename... Ts>
   std::enable_if_t<!helpers::is_iterator<T>::value, ir::Statement>
-  reorder(T &t, Ts &... ts) const;
+    reorder(T &t, Ts &... ts) const;
 
   template <typename Iterator,
             typename = std::enable_if_t<helpers::is_iterator<Iterator>::value>>
@@ -63,7 +64,8 @@ private:
 
   template <typename Statement, typename... Statements>
   std::enable_if_t<!helpers::is_sequence<Statement>::value, ir::Statement>
-  sequence(const Statement &statement, const Statements &... statements) const;
+    sequence(const Statement &statement,
+             const Statements &... statements) const;
 
   ir::Statements linearizeHelper(ir::Statement &statement) const;
 

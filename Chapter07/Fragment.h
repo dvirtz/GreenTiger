@@ -18,6 +18,6 @@ struct FunctionFragment {
   std::shared_ptr<const frame::Frame> m_frame;
 };
 
-using Fragment = boost::variant<StringFragment, FunctionFragment>;
+using Fragment     = boost::variant<StringFragment, FunctionFragment>;
 using FragmentList = std::vector<Fragment>;
 } // namespace tiger

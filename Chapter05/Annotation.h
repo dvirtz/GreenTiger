@@ -3,13 +3,13 @@
 #include "variantMatch.h"
 #include <vector>
 
-#define ANNOTATE_NODE_A(r, _, name)                         \
-    on_success(name, phoenix::bind(phoenix::cref(annotation), _val, _1));  \
-    /***/
+#define ANNOTATE_NODE_A(r, _, name)                                            \
+  on_success(name, phoenix::bind(phoenix::cref(annotation), _val, _1));        \
+  /***/
 
-#define ANNOTATE_NODES(seq)                                 \
-    BOOST_PP_SEQ_FOR_EACH(ANNOTATE_NODE_A, _, seq)          \
-    /***/
+#define ANNOTATE_NODES(seq)                                                    \
+  BOOST_PP_SEQ_FOR_EACH(ANNOTATE_NODE_A, _, seq)                               \
+  /***/
 
 namespace tiger {
 
@@ -18,14 +18,13 @@ namespace tiger {
 //  for the purpose of subsequent semantic error handling when the
 //  program is being compiled.
 ///////////////////////////////////////////////////////////////////////////////
-template <typename Iterator> 
-class Annotation {
+template <typename Iterator> class Annotation {
 public:
   template <typename, typename> struct result { typedef void type; };
 
-  Annotation() = default;
-  Annotation(const Annotation&) = delete;
-  Annotation& operator=(const Annotation&) = delete;
+  Annotation()                   = default;
+  Annotation(const Annotation &) = delete;
+  Annotation &operator=(const Annotation &) = delete;
 
   void operator()(ast::Tagged &ast, Iterator pos) const {
     auto id = iters.size();
@@ -45,31 +44,27 @@ public:
     (*this)(var.name, pos);
   }
 
-  void operator()(ast::Declaration& decl, Iterator pos) const {
+  void operator()(ast::Declaration &decl, Iterator pos) const {
     helpers::match(decl)(
-      [&](ast::FunctionDeclarations& funcDecs) { (*this)(funcDecs, pos); },
-      [&](ast::TypeDeclarations& typeDecs) { (*this)(typeDecs, pos); },
-      [&](ast::VarDeclaration& varDec) { (*this)(varDec, pos); }
-      );
+      [&](ast::FunctionDeclarations &funcDecs) { (*this)(funcDecs, pos); },
+      [&](ast::TypeDeclarations &typeDecs) { (*this)(typeDecs, pos); },
+      [&](ast::VarDeclaration &varDec) { (*this)(varDec, pos); });
   }
 
-//   void operator()(ast::Expression& expression, Iterator pos) const {
-//     helpers::match(expression)(
-//       [&](ast::Tagged& e) { (*this)(e, pos); }
-//       );
-//   }
-// 
-//   template<typename T>
-//   void operator()(std::vector<T>& vec, Iterator pos) const {
-//     if (!vec.empty()) {
-//       (*this)(vec.front(), pos);
-//     }
-//   }
+  //   void operator()(ast::Expression& expression, Iterator pos) const {
+  //     helpers::match(expression)(
+  //       [&](ast::Tagged& e) { (*this)(e, pos); }
+  //       );
+  //   }
+  //
+  //   template<typename T>
+  //   void operator()(std::vector<T>& vec, Iterator pos) const {
+  //     if (!vec.empty()) {
+  //       (*this)(vec.front(), pos);
+  //     }
+  //   }
 
-  Iterator iteratorFromId(size_t id)
-  {
-    return iters[id];
-  }
+  Iterator iteratorFromId(size_t id) { return iters[id]; }
 
 private:
   mutable std::vector<Iterator> iters;

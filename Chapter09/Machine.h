@@ -17,10 +17,10 @@ public:
 
   virtual temp::PredefinedRegisters predefinedRegisters() = 0;
 
-  virtual frame::CallingConvention &callingConvention() = 0;
+  virtual frame::CallingConvention &callingConvention()             = 0;
   virtual const frame::CallingConvention &callingConvention() const = 0;
 
-  virtual assembly::CodeGenerator &codeGenerator() = 0;
+  virtual assembly::CodeGenerator &codeGenerator()             = 0;
   virtual const assembly::CodeGenerator &codeGenerator() const = 0;
 };
 } // namespace tiger

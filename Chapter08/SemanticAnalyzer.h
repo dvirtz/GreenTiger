@@ -20,12 +20,12 @@ public:
 
   template <typename ErrorHandler, typename Annotation>
   SemanticAnalyzer(ErrorHandler &errorHandler, Annotation &annotation,
-                   temp::Map &tempMap, translator::Translator &translator)
-      : m_errorHandler(
-            [&errorHandler, &annotation](size_t id, const std::string &what) {
-              errorHandler("Error", what, annotation.iteratorFromId(id));
-            }),
-        m_tempMap(tempMap), m_translator(translator) {
+                   temp::Map &tempMap, translator::Translator &translator) :
+      m_errorHandler(
+        [&errorHandler, &annotation](size_t id, const std::string &what) {
+          errorHandler("Error", what, annotation.iteratorFromId(id));
+        }),
+      m_tempMap(tempMap), m_translator(translator) {
     m_environments.push_back(defaultEnvironment());
   }
 
@@ -59,9 +59,9 @@ private:
 
   bool equalTypes(const NamedType &lhs, const NamedType &rhs) const {
     // nil can be converted to a record
-    return lhs.m_name == rhs.m_name ||
-           (hasType<NilType>(lhs) && hasType<RecordType>(rhs)) ||
-           (hasType<RecordType>(lhs) && hasType<NilType>(rhs));
+    return lhs.m_name == rhs.m_name
+           || (hasType<NilType>(lhs) && hasType<RecordType>(rhs))
+           || (hasType<RecordType>(lhs) && hasType<NilType>(rhs));
   }
 
   bool equalTypes(const CompiledExpression &lhs,

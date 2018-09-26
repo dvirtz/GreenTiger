@@ -7,14 +7,13 @@ using namespace GreenTiger;
 
 TEST_CASE("program") {
   auto program = CompoundStatement(
-      AssignmentStatement("a", BinaryOperation(5, BinOp::PLUS, 3)),
-      CompoundStatement(
-          AssignmentStatement(
-              "b",
-              ExpressionSequence(
-                  PrintStatement("a", BinaryOperation("a", BinOp::MINUS, 1)),
-                  BinaryOperation(10, BinOp::TIMES, "a"))),
-          PrintStatement("b")));
+    AssignmentStatement("a", BinaryOperation(5, BinOp::PLUS, 3)),
+    CompoundStatement(
+      AssignmentStatement(
+        "b", ExpressionSequence(
+               PrintStatement("a", BinaryOperation("a", BinOp::MINUS, 1)),
+               BinaryOperation(10, BinOp::TIMES, "a"))),
+      PrintStatement("b")));
 
   REQUIRE(maxargs(program) == 2);
   VariableValues values;
@@ -30,10 +29,10 @@ TEST_CASE("sanity") {
   VariableValues values;
   REQUIRE(interpExp(0, values) == 0);
   REQUIRE(interpExp(-1, values) == -1);
-  REQUIRE(interpExp(std::numeric_limits<int>::min(), values) ==
-          std::numeric_limits<int>::min());
-  REQUIRE(interpExp(std::numeric_limits<int>::max(), values) ==
-          std::numeric_limits<int>::max());
+  REQUIRE(interpExp(std::numeric_limits<int>::min(), values)
+          == std::numeric_limits<int>::min());
+  REQUIRE(interpExp(std::numeric_limits<int>::max(), values)
+          == std::numeric_limits<int>::max());
 
   values["a"] = 8;
   REQUIRE(interpExp("a", values) == 8);

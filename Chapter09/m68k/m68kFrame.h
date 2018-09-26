@@ -14,7 +14,7 @@ public:
   static const int WORD_SIZE = 4;
 
   Frame(temp::Map &tempMap, const temp::Label &name, const BoolList &formals);
-  
+
   // Inherited via Frame
   temp::Label name() const override;
 
@@ -22,9 +22,11 @@ public:
 
   VariableAccess allocateLocal(bool escapes) override;
 
-  ir::Statement procEntryExit1(const ir::Statement& body) const override;
+  ir::Statement procEntryExit1(const ir::Statement &body) const override;
 
-  assembly::Instructions procEntryExit3(const assembly::Instructions &body) const override;
+  assembly::Instructions
+    procEntryExit3(const assembly::Instructions &body) const override;
+
 private:
   temp::Label m_name;
   AccessList m_formals;

@@ -7,19 +7,19 @@ namespace tiger {
 
 EscapeAnalyser::result_type EscapeAnalyser::analyse(ast::Expression &exp) {
   return helpers::match(exp)(
-      [this](ast::VarExpression &varExp) { return analyseVar(varExp); },
-      [this](ast::LetExpression &letExp) { return analyseLet(letExp); },
-      [this](auto &exp) {
-        return helpers::accumulate(exp, true)(
-            [this](bool state, ast::Expression &subexp) {
-              return state && this->analyse(subexp);
-            },
-            [](bool state, auto & /*default*/) { return state; });
-      });
+    [this](ast::VarExpression &varExp) { return analyseVar(varExp); },
+    [this](ast::LetExpression &letExp) { return analyseLet(letExp); },
+    [this](auto &exp) {
+      return helpers::accumulate(exp, true)(
+        [this](bool state, ast::Expression &subexp) {
+          return state && this->analyse(subexp);
+        },
+        [](bool state, auto & /*default*/) { return state; });
+    });
 }
 
 EscapeAnalyser::result_type
-EscapeAnalyser::analyseVar(ast::VarExpression &exp) {
+  EscapeAnalyser::analyseVar(ast::VarExpression &exp) {
   // search environments for this variable
   for (auto it = m_environments.rbegin(); it != m_environments.rend(); ++it) {
     auto itt = it->find(exp.first);
@@ -35,14 +35,14 @@ EscapeAnalyser::analyseVar(ast::VarExpression &exp) {
 }
 
 EscapeAnalyser::result_type
-EscapeAnalyser::analyseLet(ast::LetExpression &exp) {
+  EscapeAnalyser::analyseLet(ast::LetExpression &exp) {
   m_environments.emplace_back();
 
   for (auto &dec : exp.decs) {
     auto res = helpers::match(dec)(
-        [&](ast::FunctionDeclarations &decs) { return analyseFuncDec(decs); },
-        [&](ast::VarDeclaration &dec) { return analyseVarDec(dec); },
-        [&](auto & /*default*/) { return true; });
+      [&](ast::FunctionDeclarations &decs) { return analyseFuncDec(decs); },
+      [&](ast::VarDeclaration &dec) { return analyseVarDec(dec); },
+      [&](auto & /*default*/) { return true; });
     if (res == false) {
       return res;
     }
@@ -60,7 +60,7 @@ EscapeAnalyser::analyseLet(ast::LetExpression &exp) {
 }
 
 EscapeAnalyser::result_type
-EscapeAnalyser::analyseFuncDec(ast::FunctionDeclarations &decs) {
+  EscapeAnalyser::analyseFuncDec(ast::FunctionDeclarations &decs) {
   for (auto &dec : decs) {
     Environment newEnv;
     for (auto &param : dec.params) {
@@ -81,7 +81,7 @@ EscapeAnalyser::analyseFuncDec(ast::FunctionDeclarations &decs) {
 }
 
 EscapeAnalyser::result_type
-EscapeAnalyser::analyseVarDec(ast::VarDeclaration &dec) {
+  EscapeAnalyser::analyseVarDec(ast::VarDeclaration &dec) {
   dec.escapes = false;
   m_environments.back().emplace(dec.name, dec.escapes);
 

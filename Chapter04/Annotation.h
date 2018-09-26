@@ -10,8 +10,7 @@ namespace tiger {
 //  for the purpose of subsequent semantic error handling when the
 //  program is being compiled.
 ///////////////////////////////////////////////////////////////////////////////
-template <typename Iterator> 
-class Annotation {
+template <typename Iterator> class Annotation {
 public:
   template <typename, typename> struct result { typedef void type; };
 
@@ -33,32 +32,30 @@ public:
     (*this)(var.name, pos);
   }
 
-  void operator()(ast::Declaration& decl, Iterator pos) const {
+  void operator()(ast::Declaration &decl, Iterator pos) const {
     helpers::match(decl)(
-      [&](ast::FunctionDeclarations& funcDecs) { (*this)(funcDecs, pos); },
-      [&](ast::TypeDeclarations& typeDecs) { (*this)(typeDecs, pos); },
-      [&](ast::VarDeclaration& varDec) { (*this)(varDec, pos); }
-      );
+      [&](ast::FunctionDeclarations &funcDecs) { (*this)(funcDecs, pos); },
+      [&](ast::TypeDeclarations &typeDecs) { (*this)(typeDecs, pos); },
+      [&](ast::VarDeclaration &varDec) { (*this)(varDec, pos); });
   }
 
-  void operator()(ast::Expression& expression, Iterator pos) const {
+  void operator()(ast::Expression &expression, Iterator pos) const {
     helpers::match(expression)(
-      [&](ast::VarExpression& e) { (*this)(e.first, pos); },
-      [&](ast::CallExpression& e) { (*this)(e.func, pos); },
-      [&](ast::ArithmeticExpression& e) { (*this)(e.first, pos); },
-      [&](ast::RecordExpression& e) { (*this)(e.type, pos); },
-      [&](ast::AssignExpression& e) { (*this)(e.var.first, pos); },
-      [&](ast::IfExpression& e) { (*this)(e.test, pos); },
-      [&](ast::WhileExpression& e) { (*this)(e.test, pos); },
-      [&](ast::ForExpression& e) { (*this)(e.var, pos); },
-      [&](ast::LetExpression& e) { (*this)(e.decs, pos); },
-      [&](ast::ArrayExpression& e) { (*this)(e.type, pos); },
-      [&](auto& /* e */) {/*noop*/}
-      );
+      [&](ast::VarExpression &e) { (*this)(e.first, pos); },
+      [&](ast::CallExpression &e) { (*this)(e.func, pos); },
+      [&](ast::ArithmeticExpression &e) { (*this)(e.first, pos); },
+      [&](ast::RecordExpression &e) { (*this)(e.type, pos); },
+      [&](ast::AssignExpression &e) { (*this)(e.var.first, pos); },
+      [&](ast::IfExpression &e) { (*this)(e.test, pos); },
+      [&](ast::WhileExpression &e) { (*this)(e.test, pos); },
+      [&](ast::ForExpression &e) { (*this)(e.var, pos); },
+      [&](ast::LetExpression &e) { (*this)(e.decs, pos); },
+      [&](ast::ArrayExpression &e) { (*this)(e.type, pos); },
+      [&](auto & /* e */) { /*noop*/ });
   }
 
-  template<typename T>
-  void operator()(std::vector<T>& vec, Iterator pos) const {
+  template <typename T>
+  void operator()(std::vector<T> &vec, Iterator pos) const {
     if (!vec.empty()) {
       (*this)(vec.front(), pos);
     }

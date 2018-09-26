@@ -1,6 +1,6 @@
 #include "x64Frame.h"
-#include "variantMatch.h"
 #include "Assembly.h"
+#include "variantMatch.h"
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
 
@@ -9,8 +9,9 @@ namespace frame {
 namespace x64 {
 
 Frame::Frame(temp::Map &tempMap, const temp::Label &name,
-             const BoolList &formals)
-    : frame::Frame(tempMap), m_name(name) {
+             const BoolList &formals) :
+    frame::Frame(tempMap),
+    m_name(name) {
   for (size_t i = 0; i < formals.size(); ++i) {
     auto varAccess = [this](bool escapes) -> VariableAccess {
       if (escapes || m_allocatedRegs == MAX_REGS) {
@@ -40,9 +41,12 @@ VariableAccess Frame::allocateLocal(bool escapes) {
   return InReg{m_tempMap.newTemp()};
 }
 
-ir::Statement Frame::procEntryExit1(const ir::Statement &body) const { return body; }
+ir::Statement Frame::procEntryExit1(const ir::Statement &body) const {
+  return body;
+}
 
-assembly::Instructions Frame::procEntryExit3(const assembly::Instructions &body) const {
+assembly::Instructions
+  Frame::procEntryExit3(const assembly::Instructions &body) const {
   return body;
 }
 

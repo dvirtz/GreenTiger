@@ -1,0 +1,23 @@
+Language:        Cpp
+BasedOnStyle:  LLVM
+AlignConsecutiveAssignments: true
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: true
+AlwaysBreakTemplateDeclarations: false
+BraceWrapping:   
+  IndentBraces:    false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeBraces: Custom
+BreakConstructorInitializers: AfterColon
+BreakStringLiterals: false
+ColumnLimit:     80
+ContinuationIndentWidth: 2
+IncludeBlocks:   Merge
+IndentCaseLabels: true
+IndentWrappedFunctionNames: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+Standard:        Cpp11

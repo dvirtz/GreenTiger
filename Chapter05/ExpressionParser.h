@@ -1,16 +1,16 @@
 #pragma once
-#include "ErrorHandler.h"
-#include "Skipper.h"
-#include "IdentifierParser.h"
 #include "DeclerationParser.h"
+#include "ErrorHandler.h"
+#include "IdentifierParser.h"
+#include "Skipper.h"
 #include "StringParser.h"
+#include "warning_suppress.h"
 #include <boost/spirit/include/phoenix_bind.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
+#include <boost/spirit/include/phoenix_fusion.hpp>
 #include <boost/spirit/include/phoenix_object.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
-#include <boost/spirit/include/phoenix_fusion.hpp>
 #include <boost/spirit/include/phoenix_statement.hpp>
-#include "warning_suppress.h"
 MSC_DIAG_OFF(4996 4459)
 #include <boost/spirit/include/qi.hpp>
 MSC_DIAG_ON()
@@ -18,64 +18,56 @@ MSC_DIAG_ON()
 namespace tiger {
 
 template <typename Iterator>
-class ExpressionParser : public boost::spirit::qi::grammar<Iterator, Skipper<Iterator>, tiger::ast::Expression()> {
+class ExpressionParser
+    : public boost::spirit::qi::grammar<Iterator, Skipper<Iterator>,
+                                        tiger::ast::Expression()> {
 public:
-  ExpressionParser(ErrorHandler<Iterator> &errorHandler, Annotation<Iterator> &annotation)
-    : ExpressionParser::base_type(expression),
-    identifier(errorHandler, annotation),
-    declaration(*this, identifier, errorHandler, annotation),
-    string(errorHandler, annotation)
-  {
-    namespace spirit = boost::spirit;
-    namespace qi = spirit::qi;
-    namespace ascii = spirit::ascii;
+  ExpressionParser(ErrorHandler<Iterator> &errorHandler,
+                   Annotation<Iterator> &annotation) :
+      ExpressionParser::base_type(expression),
+      identifier(errorHandler, annotation),
+      declaration(*this, identifier, errorHandler, annotation),
+      string(errorHandler, annotation) {
+    namespace spirit  = boost::spirit;
+    namespace qi      = spirit::qi;
+    namespace ascii   = spirit::ascii;
     namespace phoenix = boost::phoenix;
 
     using namespace std::string_literals;
 
-    using qi::on_error;
-    using qi::fail;
-    using qi::on_success;
-    using qi::lit;
-    using qi::uint_;
-    using qi::lexeme;
-    using qi::_1;
-    using qi::_val;
-    using qi::repeat;
-    using qi::attr;
-    using qi::uint_parser;
-    using qi::eps;
-    using qi::_pass;
-    using qi::skip;
     using ascii::alnum;
     using phoenix::at_c;
+    using qi::_1;
+    using qi::_pass;
+    using qi::_val;
+    using qi::attr;
+    using qi::eps;
+    using qi::fail;
+    using qi::lexeme;
+    using qi::lit;
+    using qi::on_error;
+    using qi::on_success;
+    using qi::repeat;
+    using qi::skip;
+    using qi::uint_;
+    using qi::uint_parser;
 
     using namespace qi::labels;
 
-    relationalOp.add
-    ("=", ast::Operation::EQUAL)
-      ("<>", ast::Operation::NOT_EQUAL)
-      ("<", ast::Operation::LESS_THEN)
-      (">", ast::Operation::GREATER_THEN)
-      ("<=", ast::Operation::LESS_EQUAL)
-      (">=", ast::Operation::GREATER_EQUAL)
-      ;
+    relationalOp.add("=", ast::Operation::EQUAL)("<>",
+                                                 ast::Operation::NOT_EQUAL)(
+      "<", ast::Operation::LESS_THEN)(">", ast::Operation::GREATER_THEN)(
+      "<=", ast::Operation::LESS_EQUAL)(">=", ast::Operation::GREATER_EQUAL);
 
-    additiveOp.add
-    ("+", ast::Operation::PLUS)
-      ("-", ast::Operation::MINUS)
-      ;
+    additiveOp.add("+", ast::Operation::PLUS)("-", ast::Operation::MINUS);
 
-    multiplicativeOp.add
-    ("*", ast::Operation::TIMES)
-      ("/", ast::Operation::DIVIDE)
-      ;
+    multiplicativeOp.add("*", ast::Operation::TIMES)("/",
+                                                     ast::Operation::DIVIDE);
 
-    unaryOp.add
-    ("-", ast::Operation::MINUS)
-      ;
+    unaryOp.add("-", ast::Operation::MINUS);
 
-    wholeWord = lexeme[qi::string(_r1) >> !(alnum | '_')]; // make sure we have whole words
+    wholeWord = lexeme[qi::string(_r1)
+                       >> !(alnum | '_')]; // make sure we have whole words
 
     nil %= wholeWord("nil"s) >> attr(ast::NilExpression{});
 
@@ -91,52 +83,32 @@ public:
 
     functionCall = identifier >> '(' > -(expression % ',') > ')';
 
-    primaryExpression
-      = nil
-      | string
-      | integer
-      | functionCall
-      | lvalue
-      | sequence
-      ;
+    primaryExpression =
+      nil | string | integer | functionCall | lvalue | sequence;
 
-    unaryExpression
-      = (primaryExpression > attr(ast::OperationExpressions{}))
+    unaryExpression =
+      (primaryExpression > attr(ast::OperationExpressions{}))
       // -x is parsed as 0-x
-      | (attr(ast::IntExpression{ 0 }) >> repeat(1)[unaryOp > unaryExpression])
-      ;
+      | (attr(ast::IntExpression{0}) >> repeat(1)[unaryOp > unaryExpression]);
 
-    multiplicativeExpression 
-      = unaryExpression 
-      >> *(multiplicativeOp > unaryExpression)
-      ;
+    multiplicativeExpression =
+      unaryExpression >> *(multiplicativeOp > unaryExpression);
 
-    additiveExpression 
-      = multiplicativeExpression 
-      >> *(additiveOp > multiplicativeExpression)
-      ;
+    additiveExpression =
+      multiplicativeExpression >> *(additiveOp > multiplicativeExpression);
 
-    comparisonExpression
-      = additiveExpression
-      // comparison operators do not associate
-      >> repeat(0, 1)[relationalOp > additiveExpression]
-      ;
+    comparisonExpression = additiveExpression
+                           // comparison operators do not associate
+                           >> repeat(0, 1)[relationalOp > additiveExpression];
 
     booleanExpression = booleanAnd | booleanOr;
 
-    booleanAnd
-      = comparisonExpression
-      >> '&'
-      > (booleanAnd | comparisonExpression)
-      > attr(ast::IntExpression{ 0 })
-      ;
+    booleanAnd = comparisonExpression >> '&'
+                 > (booleanAnd | comparisonExpression)
+                 > attr(ast::IntExpression{0});
 
-    booleanOr
-      = comparisonExpression
-      >> '|'
-      > attr(ast::IntExpression{ 1 })
-      > booleanOrHelper
-      ;
+    booleanOr = comparisonExpression >> '|' > attr(ast::IntExpression{1})
+                > booleanOrHelper;
 
     booleanOrHelper = booleanOr | comparisonExpression;
 
@@ -146,114 +118,45 @@ public:
 
     assignment = lvalue >> ":=" > expression;
 
-    ifThenElse
-      = wholeWord("if"s)
-      >> expression
-      > wholeWord("then"s)
-      > expression
-      > -(
-        wholeWord("else"s)
-        > expression
-        )
-      ;
+    ifThenElse = wholeWord("if"s) >> expression > wholeWord("then"s)
+                 > expression > -(wholeWord("else"s) > expression);
 
-    whileLoop 
-      =  wholeWord("while"s)
-      > expression 
-      > wholeWord("do"s)
-      > expression
-      ;
+    whileLoop =
+      wholeWord("while"s) > expression > wholeWord("do"s) > expression;
 
-    forLoop 
-      = wholeWord("for"s) 
-      > identifier 
-      > ":=" 
-      > expression 
-      > wholeWord("to"s)
-      > expression 
-      > wholeWord("do"s) 
-      > expression
-      ;
+    forLoop = wholeWord("for"s) > identifier > ":=" > expression
+              > wholeWord("to"s) > expression > wholeWord("do"s) > expression;
 
     breakExpression = wholeWord("break"s) >> attr(ast::BreakExpression{});
 
-    let 
-      = wholeWord("let"s) 
-      > *declaration 
-      > wholeWord("in"s) 
-      > -(expression % ';') 
-      > wholeWord("end"s)
-      ;
+    let = wholeWord("let"s) > *declaration > wholeWord("in"s)
+          > -(expression % ';') > wholeWord("end"s);
 
-    expression
-      = record
-      | array
-      | assignment
-      | ifThenElse
-      | whileLoop
-      | forLoop
-      | breakExpression
-      | let
-      | booleanExpression
-      | comparisonExpression
-      ;
+    expression = record | array | assignment | ifThenElse | whileLoop | forLoop
+                 | breakExpression | let | booleanExpression
+                 | comparisonExpression;
 
     on_error<fail>(expression,
-      phoenix::bind(errorHandler, "Error! Expecting "s, _4, _3));
+                   phoenix::bind(errorHandler, "Error! Expecting "s, _4, _3));
 
-    ANNOTATE_NODES(
-      (lvalue)
-      (sequence)
-      (integer)
-      (functionCall)
-      (additiveExpression)
-      (comparisonExpression)
-      (booleanExpression)
-      (record)
-      (array)
-      (assignment)
-      (ifThenElse)
-      (whileLoop)
-      (forLoop)
-      (breakExpression)
-      (let)
-      (multiplicativeExpression)
-      (unaryExpression)
-      (nil)
-    )
+    ANNOTATE_NODES((lvalue)(sequence)(integer)(functionCall)(
+      additiveExpression)(comparisonExpression)(booleanExpression)(record)(
+      array)(assignment)(ifThenElse)(whileLoop)(forLoop)(breakExpression)(let)(
+      multiplicativeExpression)(unaryExpression)(nil))
 
     BOOST_SPIRIT_DEBUG_NODES(
-      (expression)
-      (lvalue)
-      (sequence)
-      (integer)
-      (functionCall)
-      (additiveExpression)
-      (comparisonExpression)
-      (booleanExpression)
-      (record)
-      (array)
-      (assignment)
-      (ifThenElse)
-      (whileLoop)
-      (forLoop)
-      (breakExpression)
-      (let)
-      (multiplicativeExpression)
-      (primaryExpression)
-      (unaryExpression)
-      (booleanAnd)
-      (booleanOr)
-      (booleanOrHelper)
-      (varField)
-      (subscript)
-      (nil)
-    )
+      (expression)(lvalue)(sequence)(integer)(functionCall)(additiveExpression)(
+        comparisonExpression)(booleanExpression)(record)(array)(assignment)(
+        ifThenElse)(whileLoop)(forLoop)(breakExpression)(let)(
+        multiplicativeExpression)(primaryExpression)(unaryExpression)(
+        booleanAnd)(booleanOr)(booleanOrHelper)(varField)(subscript)(nil))
   }
 
 private:
-  template <typename Signature = boost::spirit::qi::unused_type, typename Locals = boost::spirit::qi::unused_type>
-  using rule = boost::spirit::qi::rule<Iterator, Skipper<Iterator>, Signature, Locals>;
+  template <typename Signature = boost::spirit::qi::unused_type,
+            typename Locals    = boost::spirit::qi::unused_type>
+  using rule =
+    boost::spirit::qi::rule<Iterator, Skipper<Iterator>, Signature, Locals>;
 
   IdentifierParser<Iterator> identifier;
   DeclerationParser<Iterator> declaration;
@@ -281,15 +184,13 @@ private:
   rule<ast::IfExpression()> booleanOr;
   rule<ast::Expression()> booleanOrHelper;
   rule<ast::IfExpression()> booleanAnd;
-  rule<ast::VarField()>     varField;
-  rule<ast::Subscript()>    subscript;
+  rule<ast::VarField()> varField;
+  rule<ast::Subscript()> subscript;
   rule<ast::NilExpression()> nil;
   rule<void(std::string)> wholeWord;
 
-  boost::spirit::qi::symbols<char, ast::Operation>
-    relationalOp, additiveOp,
-    multiplicativeOp, unaryOp
-    ;
+  boost::spirit::qi::symbols<char, ast::Operation> relationalOp, additiveOp,
+    multiplicativeOp, unaryOp;
 };
 
 } // namespace tiger

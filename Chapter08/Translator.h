@@ -57,8 +57,8 @@ public:
                                     const Expression &rhs);
 
   Expression
-  translateConditional(const Expression &test, const Expression &thenExp,
-                       const boost::optional<Expression> &elseExp = {});
+    translateConditional(const Expression &test, const Expression &thenExp,
+                         const boost::optional<Expression> &elseExp = {});
 
   Expression translateConstant(int value);
 

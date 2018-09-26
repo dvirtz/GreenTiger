@@ -57,8 +57,8 @@ public:
                                     const Expression &rhs);
 
   Expression
-  translateConditional(const Expression &test, const Expression &thenExp,
-                       const boost::optional<Expression> &elseExp = {});
+    translateConditional(const Expression &test, const Expression &thenExp,
+                         const boost::optional<Expression> &elseExp = {});
 
   Expression translateConstant(int value);
 
@@ -97,9 +97,7 @@ public:
 
   FragmentList result() const;
 
-  Level topLevel() const {
-    return m_outermost;
-  }
+  Level topLevel() const { return m_outermost; }
 
 private:
   void doPatch(const PatchList &patchList, const temp::Label &label);

@@ -1,6 +1,6 @@
 #include "m68kMachine.h"
-#include "m68kRegisters.h"
 #include "Tree.h"
+#include "m68kRegisters.h"
 
 namespace tiger {
 namespace m68k {

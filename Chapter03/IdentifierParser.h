@@ -9,13 +9,13 @@ MSC_DIAG_ON()
 namespace tiger {
 template <typename Iterator>
 class IdentifierParser
-  : public boost::spirit::qi::grammar<Iterator, Skipper<Iterator>> {
+    : public boost::spirit::qi::grammar<Iterator, Skipper<Iterator>> {
 public:
-  IdentifierParser(ErrorHandler<Iterator> &/* errorHandler */)
-    : IdentifierParser::base_type(identifier) {
+  IdentifierParser(ErrorHandler<Iterator> & /* errorHandler */) :
+      IdentifierParser::base_type(identifier) {
     namespace spirit = boost::spirit;
-    namespace qi = spirit::qi;
-    namespace ascii = spirit::ascii;
+    namespace qi     = spirit::qi;
+    namespace ascii  = spirit::ascii;
 
     using ascii::alnum;
     using ascii::alpha;
@@ -23,34 +23,13 @@ public:
     using qi::lexeme;
     using qi::raw;
 
-    keywords.add
-    ("array")
-      ("if")
-      ("then")
-      ("else")
-      ("while")
-      ("for")
-      ("to")
-      ("do")
-      ("let")
-      ("in")
-      ("end")
-      ("of")
-      ("break")
-      ("nil")
-      ("function")
-      ("var")
-      ("type")
-      ;
+    keywords.add("array")("if")("then")("else")("while")("for")("to")("do")(
+      "let")("in")("end")("of")("break")("nil")("function")("var")("type");
 
     identifier =
-      !lexeme[keywords >> !(alnum | '_')]
-      >> lexeme[alpha >> *(alnum | '_')]
-      ;
+      !lexeme[keywords >> !(alnum | '_')] >> lexeme[alpha >> *(alnum | '_')];
 
-    BOOST_SPIRIT_DEBUG_NODES(
-      (identifier)
-    )
+    BOOST_SPIRIT_DEBUG_NODES((identifier))
   }
 
 private:

@@ -1,21 +1,18 @@
 #include "x64CodeGenerator.h"
-#include "Tree.h"
 #include "CallingConvention.h"
-#include <range/v3/view/zip_with.hpp>
+#include "Tree.h"
 #include <range/v3/view/iota.hpp>
+#include <range/v3/view/zip_with.hpp>
 
-namespace tiger
-{
-namespace assembly
-{
-namespace x64
-{
+namespace tiger {
+namespace assembly {
+namespace x64 {
 
-CodeGenerator::CodeGenerator(frame::CallingConvention &callingConvention)
-    : assembly::CodeGenerator{
-          callingConvention,
-          {
-              // clang-format off
+CodeGenerator::CodeGenerator(frame::CallingConvention &callingConvention) :
+    assembly::CodeGenerator{
+      callingConvention,
+      {
+        // clang-format off
             Pattern{ir::Move{callingConvention.returnValue(), ir::Call{label()}}, Operation{"call `l0"}},
             Pattern{ir::Move{reg(), imm()}, Move{"mov `s0, `i0"}},
             Pattern{ir::Move{reg(), label()}, Move{"mov `s0, `l0"}},
@@ -55,41 +52,42 @@ CodeGenerator::CodeGenerator(frame::CallingConvention &callingConvention)
             Pattern{ir::Call{label()}, Operation{"call `l0"}}, 
             Pattern{ir::Call{exp()}, Operation{"call `s0"}},
             Pattern{ir::Statement{label()}, Label{"`l0:"}}
-              // clang-format on
-          }}
-{
-}
+        // clang-format on
+      }} {}
 
 Instructions CodeGenerator::translateString(const temp::Label &label,
                                             const std::string &string,
-                                            temp::Map & /* tempMap */)
-{
-  return {Label{"`l0:", label},
-          Operation{{".string " + escape(string)}}};
+                                            temp::Map & /* tempMap */) {
+  return {Label{"`l0:", label}, Operation{{".string " + escape(string)}}};
 }
 
-Instructions CodeGenerator::translateArgs(const std::vector<ir::Expression> &args, const temp::Map &tempMap) const
-{
+Instructions
+  CodeGenerator::translateArgs(const std::vector<ir::Expression> &args,
+                               const temp::Map &tempMap) const {
   auto argumentRegisters = m_callingConvention.argumentRegisters();
-  auto translateArg = [&](int index, const std::string &arg) {
+  auto translateArg      = [&](int index, const std::string &arg) {
     return static_cast<size_t>(index) < argumentRegisters.size()
-               ? "mov " + *tempMap.lookup(argumentRegisters[index]) + ", " + arg
-               : "push " + arg;
+             ? "mov " + *tempMap.lookup(argumentRegisters[index]) + ", " + arg
+             : "push " + arg;
   };
-  return ranges::view::zip_with([&](int index, const ir::Expression &arg) { return helpers::match(arg)(
-                                                                                [&](int i) {
-                                                                                  return Move{translateArg(index, "`i0"), {}, {}, {}, {i}};
-                                                                                },
-                                                                                [&](const temp::Register &reg) {
-                                                                                  return Move{translateArg(index, "`s0"), {}, {reg}};
-                                                                                },
-                                                                                [&](const temp::Label &label) {
-                                                                                  return Move{translateArg(index, "`l0"), {}, {}, {label}};
-                                                                                },
-                                                                                [](const auto & /*default*/) {
-                                                                                  assert(false && "Unsupported arg type");
-                                                                                  return Move{};
-                                                                                }); }, ranges::view::ints, args);
+  return ranges::view::zip_with(
+    [&](int index, const ir::Expression &arg) {
+      return helpers::match(arg)(
+        [&](int i) {
+          return Move{translateArg(index, "`i0"), {}, {}, {}, {i}};
+        },
+        [&](const temp::Register &reg) {
+          return Move{translateArg(index, "`s0"), {}, {reg}};
+        },
+        [&](const temp::Label &label) {
+          return Move{translateArg(index, "`l0"), {}, {}, {label}};
+        },
+        [](const auto & /*default*/) {
+          assert(false && "Unsupported arg type");
+          return Move{};
+        });
+    },
+    ranges::view::ints, args);
 }
 
 } // namespace x64

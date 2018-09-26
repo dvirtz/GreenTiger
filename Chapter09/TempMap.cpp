@@ -6,9 +6,9 @@
  */
 
 #include "TempMap.h"
+#include "warning_suppress.h"
 #include <boost/optional.hpp>
 #include <ostream>
-#include "warning_suppress.h"
 MSC_DIAG_OFF(4913)
 #include <range/v3/algorithm/copy.hpp>
 MSC_DIAG_ON()
@@ -58,7 +58,7 @@ boost::optional<std::string> Map::lookup(const Register &t) const {
 
 Label Map::newLabel() {
   static const auto MIN_LABEL = 0;
-  static auto labels = MIN_LABEL;
+  static auto labels          = MIN_LABEL;
   return Label{"L" + std::to_string(labels++)};
 }
 

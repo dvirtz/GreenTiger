@@ -1,13 +1,13 @@
 #pragma once
-#include "ErrorHandler.h"
-#include "Skipper.h"
-#include "IdentifierParser.h"
 #include "DeclerationParser.h"
+#include "ErrorHandler.h"
+#include "IdentifierParser.h"
+#include "Skipper.h"
+#include "warning_suppress.h"
 #include <boost/spirit/include/phoenix_bind.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_object.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
-#include "warning_suppress.h"
 MSC_DIAG_OFF(4996 4459)
 #include <boost/spirit/include/qi.hpp>
 MSC_DIAG_ON()
@@ -15,34 +15,36 @@ MSC_DIAG_ON()
 namespace tiger {
 
 template <typename Iterator>
-class ExpressionParser : public boost::spirit::qi::grammar<Iterator, Skipper<Iterator>> {
+class ExpressionParser
+    : public boost::spirit::qi::grammar<Iterator, Skipper<Iterator>> {
 public:
-  ExpressionParser(ErrorHandler<Iterator> &errorHandler)
-    : ExpressionParser::base_type(expression), identifier(errorHandler), declaration(*this, identifier, errorHandler) {
-    namespace spirit = boost::spirit;
-    namespace qi = spirit::qi;
-    namespace ascii = spirit::ascii;
+  ExpressionParser(ErrorHandler<Iterator> &errorHandler) :
+      ExpressionParser::base_type(expression), identifier(errorHandler),
+      declaration(*this, identifier, errorHandler) {
+    namespace spirit  = boost::spirit;
+    namespace qi      = spirit::qi;
+    namespace ascii   = spirit::ascii;
     namespace phoenix = boost::phoenix;
 
     using namespace std::string_literals;
 
-    using qi::on_error;
-    using qi::fail;
-    using qi::lit;
-    using qi::uint_;
-    using qi::lexeme;
-    using qi::_1;
-    using qi::_val;
-    using qi::repeat;
     using ascii::char_;
     using ascii::cntrl;
     using ascii::digit;
     using ascii::space;
+    using qi::_1;
+    using qi::_val;
+    using qi::fail;
+    using qi::lexeme;
+    using qi::lit;
+    using qi::on_error;
+    using qi::repeat;
+    using qi::uint_;
 
     using namespace qi::labels;
 
-    lvalue = identifier >>
-      *((lit('.') > identifier) | (lit('[') > expression > ']'));
+    lvalue =
+      identifier >> *((lit('.') > identifier) | (lit('[') > expression > ']'));
 
     sequence = lit('(') >> -(expression % ';') > ')';
 
@@ -50,66 +52,40 @@ public:
 
     string = lexeme['"' > *(escapeCharacter | (char_ - '"')) > '"'];
 
-    escapeCharacter
-      = lit('\\')
-      > (lit('n')            // newline
-        | 't'                // tab
-        | (lit('^') > cntrl) // control character
-        | repeat(3)[digit]   // ascii code
-        | '"'                // double quote
-        | '\\'               // backslash
-        | (*space > '\\')  // multi-line
-        )
-      ;
+    escapeCharacter = lit('\\') > (lit('n')             // newline
+                                   | 't'                // tab
+                                   | (lit('^') > cntrl) // control character
+                                   | repeat(3)[digit]   // ascii code
+                                   | '"'                // double quote
+                                   | '\\'               // backslash
+                                   | (*space > '\\')    // multi-line
+                                  );
 
     functionCall = identifier >> '(' > -(expression % ',') > ')';
 
-    primaryExpression
-      = lit("nil")
-      | string
-      | integer
-      | functionCall
-      | lvalue
-      | sequence
-      ;
+    primaryExpression =
+      lit("nil") | string | integer | functionCall | lvalue | sequence;
 
-    unaryExpression
-      = primaryExpression
-      | ('-' > unaryExpression)
-      ;
+    unaryExpression = primaryExpression | ('-' > unaryExpression);
 
-    multiplicativeExpression 
-      = unaryExpression 
-      >> *(char_("*/") > unaryExpression)
-      ;
+    multiplicativeExpression =
+      unaryExpression >> *(char_("*/") > unaryExpression);
 
-    additiveExpression 
-      = multiplicativeExpression 
-      >> *(char_("+-") > multiplicativeExpression)
-      ;
+    additiveExpression =
+      multiplicativeExpression >> *(char_("+-") > multiplicativeExpression);
 
-    comparisonExpression
-      = additiveExpression
+    comparisonExpression =
+      additiveExpression
       // comparison operators do not associate
-      >> -(
-        (lit("=") | "<>" | ">=" | "<=" | ">" | "<") 
-        > additiveExpression
-        )
-      ;
+      >> -((lit("=") | "<>" | ">=" | "<=" | ">" | "<") > additiveExpression);
 
     booleanExpression = booleanAnd | booleanOr;
 
-    booleanAnd
-      = comparisonExpression
-      >> '&'
-      > (booleanAnd | comparisonExpression)
-      ;
+    booleanAnd =
+      comparisonExpression >> '&' > (booleanAnd | comparisonExpression);
 
-    booleanOr
-      = comparisonExpression
-      >> '|'
-      > (booleanOr | comparisonExpression)
-      ;
+    booleanOr =
+      comparisonExpression >> '|' > (booleanOr | comparisonExpression);
 
     record = identifier >> '{' > -((identifier > '=' > expression) % ',') > '}';
 
@@ -117,66 +93,30 @@ public:
 
     assignment = lvalue >> ":=" > expression;
 
-    ifThenElse
-      = lit("if")
-      >> expression
-      >> "then"
-      >> expression
-      >> -(
-        "else"
-        > expression
-        )
-      ;
+    ifThenElse =
+      lit("if") >> expression >> "then" >> expression >> -("else" > expression);
 
     whileLoop = lit("while") > expression > "do" > expression;
 
-    forLoop = lit("for") > identifier > ":=" > expression > "to" > expression >
-      "do" > expression;
+    forLoop = lit("for") > identifier > ":=" > expression > "to" > expression
+              > "do" > expression;
 
     breakExpression = lit("break");
 
     let = lit("let") > *declaration > "in" > -(expression % ';') > lit("end");
 
-    expression
-      = record
-      | array
-      | assignment
-      | ifThenElse
-      | whileLoop
-      | forLoop
-      | breakExpression
-      | let
-      | booleanExpression
-      | comparisonExpression
-      ;
+    expression = record | array | assignment | ifThenElse | whileLoop | forLoop
+                 | breakExpression | let | booleanExpression
+                 | comparisonExpression;
 
     on_error<fail>(expression,
-      phoenix::bind(errorHandler, "Error! Expecting "s, _4, _3));
+                   phoenix::bind(errorHandler, "Error! Expecting "s, _4, _3));
 
-    BOOST_SPIRIT_DEBUG_NODES(
-      (expression)
-      (lvalue)
-      (sequence)
-      (integer)
-      (string)
-      (functionCall)
-      (additiveExpression)
-      (comparisonExpression)
-      (booleanExpression)
-      (record)
-      (array)
-      (assignment)
-      (ifThenElse)
-      (whileLoop)
-      (forLoop)
-      (breakExpression)
-      (let)
-      (multiplicativeExpression)
-      (primaryExpression)
-      (unaryExpression)
-      (booleanAnd)
-      (booleanOr)
-    )
+    BOOST_SPIRIT_DEBUG_NODES((expression)(lvalue)(sequence)(integer)(string)(
+      functionCall)(additiveExpression)(comparisonExpression)(
+      booleanExpression)(record)(array)(assignment)(ifThenElse)(whileLoop)(
+      forLoop)(breakExpression)(let)(multiplicativeExpression)(
+      primaryExpression)(unaryExpression)(booleanAnd)(booleanOr))
   }
 
 private:

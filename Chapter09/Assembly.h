@@ -2,15 +2,15 @@
 #include "TempMap.h"
 #include <boost/variant.hpp>
 #include <ostream>
+#include <range/v3/view/any_view.hpp>
 #include <string>
 #include <vector>
-#include <range/v3/view/any_view.hpp>
 
 namespace tiger {
 
 namespace assembly {
-using Registers = std::vector<temp::Register>;
-using Labels = std::vector<temp::Label>;
+using Registers  = std::vector<temp::Register>;
+using Labels     = std::vector<temp::Label>;
 using Immediates = std::vector<int>;
 
 struct Operation {
@@ -20,11 +20,9 @@ struct Operation {
   Labels m_jumps;
   Immediates m_immediates;
 
-  Operation(std::initializer_list<std::string> syntaxes, 
-            const Registers &destinations = {}, 
-            const Registers &sources = {}, 
-            const Labels &labels = {}, 
-            const Immediates &immediates = {});
+  Operation(std::initializer_list<std::string> syntaxes,
+            const Registers &destinations = {}, const Registers &sources = {},
+            const Labels &labels = {}, const Immediates &immediates = {});
 };
 
 struct Label {
@@ -54,11 +52,10 @@ void print(std::ostream &out, const Instructions &instructions,
            const temp::Map &tempMap);
 
 std::ostream &
-operator<<(std::ostream &ost,
-           const std::pair<temp::Map, assembly::Instructions> &compileResult);
+  operator<<(std::ostream &ost,
+             const std::pair<temp::Map, assembly::Instructions> &compileResult);
 
-Instructions
-joinInstructions(ranges::any_view<Instructions> instructions);
+Instructions joinInstructions(ranges::any_view<Instructions> instructions);
 
 struct Procedure {
   std::string m_prolog;

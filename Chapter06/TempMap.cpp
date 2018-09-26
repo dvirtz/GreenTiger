@@ -6,8 +6,8 @@
  */
 
 #include "TempMap.h"
-#include <ostream>
 #include <boost/optional.hpp>
+#include <ostream>
 
 namespace tiger {
 
@@ -33,9 +33,9 @@ void TempMap::layerOver(TempMap &&under) {
 
 Temporary TempMap::newTemp() {
   static const auto MIN_TEMP = 100;
-  static auto temps = MIN_TEMP;
-  auto res = temps++;
-  m_map[res] = std::to_string(res);
+  static auto temps          = MIN_TEMP;
+  auto res                   = temps++;
+  m_map[res]                 = std::to_string(res);
   return res;
 }
 
@@ -50,7 +50,7 @@ boost::optional<std::string> TempMap::lookup(const Temporary &t) {
 
 Label TempMap::newLabel() {
   static const auto MIN_LABEL = 0;
-  static auto labels = MIN_LABEL;
+  static auto labels          = MIN_LABEL;
   return "L" + std::to_string(labels++);
 }
 

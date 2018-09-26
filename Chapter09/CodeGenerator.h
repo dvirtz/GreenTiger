@@ -5,20 +5,16 @@
 #include <utility>
 #include <vector>
 
-namespace tiger
-{
+namespace tiger {
 
-namespace frame
-{
+namespace frame {
 class CallingConvention;
 }
 
-namespace assembly
-{
+namespace assembly {
 
 using Dag = boost::variant<ir::Expression, ir::Statement>;
-struct Pattern
-{
+struct Pattern {
   Dag m_dag;
   Instruction m_instruction;
 };
@@ -33,8 +29,7 @@ inline ir::Placeholder exp() { return ir::Placeholder::EXPRESSION; }
 
 using Patterns = std::vector<Pattern>;
 
-class CodeGenerator
-{
+class CodeGenerator {
 public:
   CodeGenerator(frame::CallingConvention &callingConvention,
                 Patterns &&patterns);
@@ -52,9 +47,11 @@ protected:
   frame::CallingConvention &m_callingConvention;
 
 private:
-  boost::optional<Instructions> match(const ir::Statement &statement, temp::Map &tempMap) const;
+  boost::optional<Instructions> match(const ir::Statement &statement,
+                                      temp::Map &tempMap) const;
 
-  virtual Instructions translateArgs(const std::vector<ir::Expression> &args, const temp::Map &tempMap) const = 0;
+  virtual Instructions translateArgs(const std::vector<ir::Expression> &args,
+                                     const temp::Map &tempMap) const = 0;
 
   friend struct DagMatcher;
 

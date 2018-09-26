@@ -6,8 +6,7 @@
 
 namespace tiger {
 
-using CompileResult =
-    boost::optional<std::string>;
+using CompileResult = boost::optional<std::string>;
 
 CompileResult compileFile(const std::string &arch, const std::string &filename);
 

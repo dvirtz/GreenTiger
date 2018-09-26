@@ -16,7 +16,7 @@ Compiler::result_type Compiler::compile(const ast::Expression &ast) {
 Compiler::result_type Compiler::compile(Translator::Level level,
                                         const ast::Expression &ast) {
   return helpers::match(ast)(
-      [this, level](auto &exp) { return this->compile(level, exp); });
+    [this, level](auto &exp) { return this->compile(level, exp); });
 }
 
 Compiler::result_type Compiler::compile(Translator::Level /*level*/,
@@ -27,7 +27,7 @@ Compiler::result_type Compiler::compile(Translator::Level /*level*/,
 Compiler::result_type Compiler::compile(Translator::Level level,
                                         const ast::VarExpression &exp) {
   std::string name = exp.first;
-  auto val = findValue(name);
+  auto val         = findValue(name);
   if (!val) {
     return m_errorHandler(exp.id, "Unknown identifier " + name);
   }
@@ -41,43 +41,41 @@ Compiler::result_type Compiler::compile(Translator::Level level,
 
   for (const auto &v : exp.rest) {
     if (!helpers::match(v)(
-            [&](const ast::VarField &vf) -> bool {
-              auto record = boost::get<RecordType>(&namedType.m_type);
-              if (!record) {
-                return m_errorHandler(vf.name.id,
-                                      "Expression must be of record type");
-              }
-              auto it =
-                  std::find_if(record->m_fields.begin(), record->m_fields.end(),
-                               [&](const auto &field) {
-                                 return field.m_name == vf.name.name;
-                               });
-              if (it == record->m_fields.end()) {
-                return m_errorHandler(vf.name.id,
-                                      "Unknown record member " + vf.name.name);
-              }
-              auto tmp = std::move(it->m_type);
-              namedType = tmp;
-              return true;
-            },
-            [&](const ast::Subscript &s) -> bool {
-              auto compiledExp = compile(level, s.exp);
-              if (!compiledExp) {
-                return false;
-              }
-              if (!hasType<IntType>(*compiledExp)) {
-                return m_errorHandler(
-                    id(s.exp), "Subscript expression must be of integer type");
-              }
-              auto array = boost::get<ArrayType>(&namedType.m_type);
-              if (!array) {
-                return m_errorHandler(id(s.exp),
-                                      "Expression must be of array type");
-              }
-              auto tmp = array->m_elementType;
-              namedType = tmp;
-              return true;
-            })) {
+          [&](const ast::VarField &vf) -> bool {
+            auto record = boost::get<RecordType>(&namedType.m_type);
+            if (!record) {
+              return m_errorHandler(vf.name.id,
+                                    "Expression must be of record type");
+            }
+            auto it = std::find_if(
+              record->m_fields.begin(), record->m_fields.end(),
+              [&](const auto &field) { return field.m_name == vf.name.name; });
+            if (it == record->m_fields.end()) {
+              return m_errorHandler(vf.name.id,
+                                    "Unknown record member " + vf.name.name);
+            }
+            auto tmp  = std::move(it->m_type);
+            namedType = tmp;
+            return true;
+          },
+          [&](const ast::Subscript &s) -> bool {
+            auto compiledExp = compile(level, s.exp);
+            if (!compiledExp) {
+              return false;
+            }
+            if (!hasType<IntType>(*compiledExp)) {
+              return m_errorHandler(
+                id(s.exp), "Subscript expression must be of integer type");
+            }
+            auto array = boost::get<ArrayType>(&namedType.m_type);
+            if (!array) {
+              return m_errorHandler(id(s.exp),
+                                    "Expression must be of array type");
+            }
+            auto tmp  = array->m_elementType;
+            namedType = tmp;
+            return true;
+          })) {
       return {};
     }
   }
@@ -86,19 +84,20 @@ Compiler::result_type Compiler::compile(Translator::Level level,
 }
 
 Compiler::result_type Compiler::compile(Translator::Level /* level */,
-                                        const ast::IntExpression &/* exp */) {
+                                        const ast::IntExpression & /* exp */) {
   return CompiledExpression{s_intType};
 }
 
-Compiler::result_type Compiler::compile(Translator::Level /* level */,
-                                        const ast::StringExpression &/* exp */) {
+Compiler::result_type
+  Compiler::compile(Translator::Level /* level */,
+                    const ast::StringExpression & /* exp */) {
   return CompiledExpression{s_stringType};
 }
 
 Compiler::result_type Compiler::compile(Translator::Level level,
                                         const ast::CallExpression &exp) {
   std::string name = exp.func;
-  auto val = findValue(name);
+  auto val         = findValue(name);
   if (!val) {
     return m_errorHandler(exp.func.id, "Unknown function " + name);
   }
@@ -110,9 +109,9 @@ Compiler::result_type Compiler::compile(Translator::Level level,
   const auto &paramTypes = func->m_parameterTypes;
   if (exp.args.size() != paramTypes.size()) {
     return m_errorHandler(exp.func.id,
-                          "Expecting " + std::to_string(paramTypes.size()) +
-                              " parameters, " +
-                              std::to_string(exp.args.size()) + " given");
+                          "Expecting " + std::to_string(paramTypes.size())
+                            + " parameters, " + std::to_string(exp.args.size())
+                            + " given");
   }
 
   std::vector<NamedType> argTypes;
@@ -127,9 +126,9 @@ Compiler::result_type Compiler::compile(Translator::Level level,
   for (size_t i = 0; i < argTypes.size(); ++i) {
     if (!equalTypes(argTypes[i], paramTypes[i])) {
       return m_errorHandler(id(exp.args[i]),
-                            "Wrong type of parameter " + std::to_string(i) +
-                                ", expecting " + paramTypes[i].m_name +
-                                ", got " + argTypes[i].m_name);
+                            "Wrong type of parameter " + std::to_string(i)
+                              + ", expecting " + paramTypes[i].m_name + ", got "
+                              + argTypes[i].m_name);
     }
   }
 
@@ -146,26 +145,26 @@ Compiler::result_type Compiler::compile(Translator::Level level,
   auto checkType = [this](ast::Operation operation,
                           const CompiledExpression &exp, size_t id) -> bool {
     switch (operation) {
-    case ast::Operation::EQUAL:
-    case ast::Operation::NOT_EQUAL:
-      // any type is OK
-      break;
+      case ast::Operation::EQUAL:
+      case ast::Operation::NOT_EQUAL:
+        // any type is OK
+        break;
 
-    case ast::Operation::LESS_THEN:
-    case ast::Operation::LESS_EQUAL:
-    case ast::Operation::GREATER_THEN:
-    case ast::Operation::GREATER_EQUAL:
-      // int or string
-      if (!hasType<IntType>(exp) && !hasType<StringType>(exp)) {
-        return m_errorHandler(id, "Expression must be of type int or string");
-      }
-      break;
+      case ast::Operation::LESS_THEN:
+      case ast::Operation::LESS_EQUAL:
+      case ast::Operation::GREATER_THEN:
+      case ast::Operation::GREATER_EQUAL:
+        // int or string
+        if (!hasType<IntType>(exp) && !hasType<StringType>(exp)) {
+          return m_errorHandler(id, "Expression must be of type int or string");
+        }
+        break;
 
-    default:
-      // other operations must have int type
-      if (!hasType<IntType>(exp)) {
-        return m_errorHandler(id, "Expression must be of type int");
-      }
+      default:
+        // other operations must have int type
+        if (!hasType<IntType>(exp)) {
+          return m_errorHandler(id, "Expression must be of type int");
+        }
     }
 
     return true;
@@ -191,7 +190,7 @@ Compiler::result_type Compiler::compile(Translator::Level level,
     }
   }
 
-  return CompiledExpression{ s_intType };
+  return CompiledExpression{s_intType};
 }
 
 Compiler::result_type Compiler::compile(Translator::Level level,
@@ -209,9 +208,9 @@ Compiler::result_type Compiler::compile(Translator::Level level,
   const auto &recordFields = recordType->m_fields;
   if (exp.fields.size() != recordFields.size()) {
     return m_errorHandler(exp.type.id,
-                          "Expecting " + std::to_string(recordFields.size()) +
-                              " fields, " + std::to_string(exp.fields.size()) +
-                              " given");
+                          "Expecting " + std::to_string(recordFields.size())
+                            + " fields, " + std::to_string(exp.fields.size())
+                            + " given");
   }
 
   std::vector<NamedType> fieldTypes;
@@ -226,9 +225,9 @@ Compiler::result_type Compiler::compile(Translator::Level level,
   for (size_t i = 0; i < fieldTypes.size(); ++i) {
     if (!equalTypes(fieldTypes[i], recordFields[i].m_type)) {
       return m_errorHandler(exp.fields[i].name.id,
-                            "Wrong type of field " + std::to_string(i) +
-                                " expecting " + recordFields[i].m_type.m_name +
-                                ", got " + fieldTypes[i].m_name);
+                            "Wrong type of field " + std::to_string(i)
+                              + " expecting " + recordFields[i].m_type.m_name
+                              + ", got " + fieldTypes[i].m_name);
     }
   }
 
@@ -248,9 +247,9 @@ Compiler::result_type Compiler::compile(Translator::Level level,
   }
 
   if (!equalTypes(*varType, *expType)) {
-    return m_errorHandler(id(exp.var), "Type " + expType->m_type.m_name +
-                                           " cannot be assigned to type " +
-                                           varType->m_type.m_name);
+    return m_errorHandler(id(exp.var), "Type " + expType->m_type.m_name
+                                         + " cannot be assigned to type "
+                                         + varType->m_type.m_name);
   }
 
   return CompiledExpression{s_voidType};
@@ -432,10 +431,10 @@ Compiler::result_type Compiler::compile(Translator::Level level,
   }
 
   if (!equalTypes(arrayType->m_elementType, initExp->m_type)) {
-    return m_errorHandler(id(exp.init), "Cannot initialize an array of " +
-                                            arrayType->m_elementType.m_name +
-                                            " from type " +
-                                            initExp->m_type.m_name);
+    return m_errorHandler(id(exp.init), "Cannot initialize an array of "
+                                          + arrayType->m_elementType.m_name
+                                          + " from type "
+                                          + initExp->m_type.m_name);
   }
 
   return CompiledExpression{*type};
@@ -514,8 +513,8 @@ bool Compiler::addToEnv(Translator::Level level,
     m_environments.pop_back();
 
     if (!equalTypes(compiled->m_type, funcType->m_resultType)) {
-      return m_errorHandler(id(dec.body), "Function body type must be " +
-                                              funcType->m_resultType.m_name);
+      return m_errorHandler(id(dec.body), "Function body type must be "
+                                            + funcType->m_resultType.m_name);
     }
   }
 
@@ -539,15 +538,15 @@ bool Compiler::addToEnv(Translator::Level level,
 
     if (!equalTypes(*type, compiled->m_type)) {
       return m_errorHandler(id(dec.init),
-                            "Type of initializing expression must be " +
-                                type->m_name);
+                            "Type of initializing expression must be "
+                              + type->m_name);
     }
 
     var.m_type = *type;
   } else if (hasType<NilType>(*compiled)) {
     return m_errorHandler(
-        id(dec.init),
-        "nil can only be used in a context where its type can be determined");
+      id(dec.init),
+      "nil can only be used in a context where its type can be determined");
   } else {
     var.m_type = compiled->m_type;
   }
@@ -570,42 +569,42 @@ bool Compiler::addToEnv(Translator::Level /* level */,
   // second pass, compile declarations
   for (const auto &dec : decs) {
     using MatchRes = boost::optional<Type>;
-    auto type = helpers::match(dec.type)(
-        [&](const ast::NameType &nameType) -> MatchRes {
-          auto type = findType(nameType.type);
+    auto type      = helpers::match(dec.type)(
+      [&](const ast::NameType &nameType) -> MatchRes {
+        auto type = findType(nameType.type);
+        if (!type) {
+          return m_errorHandler(nameType.type.id,
+                                "Undeclared type " + nameType.type.name);
+        }
+
+        if (type->m_name == dec.name.name) {
+          return m_errorHandler(dec.name.id, "Cyclic recursive deceleration");
+        }
+
+        return MatchRes{NameType{type->m_name}};
+      },
+      [&](const ast::ArrayType &arrayType) -> MatchRes {
+        auto type = findType(arrayType.type);
+        if (!type) {
+          return m_errorHandler(arrayType.type.id,
+                                "Undeclared type " + arrayType.type.name);
+        }
+
+        return MatchRes{ArrayType{*type}};
+      },
+      [&](const ast::RecordType &recordType) -> MatchRes {
+        RecordType res;
+        for (const auto &field : recordType.fields) {
+          auto type = findType(field.type);
           if (!type) {
-            return m_errorHandler(nameType.type.id,
-                                  "Undeclared type " + nameType.type.name);
+            return m_errorHandler(field.type.id,
+                                  "Undeclared type " + field.type.name);
           }
+          res.m_fields.push_back({field.name, *type});
+        }
 
-          if (type->m_name == dec.name.name) {
-            return m_errorHandler(dec.name.id, "Cyclic recursive deceleration");
-          }
-
-          return MatchRes{NameType{type->m_name}};
-        },
-        [&](const ast::ArrayType &arrayType) -> MatchRes {
-          auto type = findType(arrayType.type);
-          if (!type) {
-            return m_errorHandler(arrayType.type.id,
-                                  "Undeclared type " + arrayType.type.name);
-          }
-
-          return MatchRes{ArrayType{*type}};
-        },
-        [&](const ast::RecordType &recordType) -> MatchRes {
-          RecordType res;
-          for (const auto &field : recordType.fields) {
-            auto type = findType(field.type);
-            if (!type) {
-              return m_errorHandler(field.type.id,
-                                    "Undeclared type " + field.type.name);
-            }
-            res.m_fields.push_back({field.name, *type});
-          }
-
-          return MatchRes{res};
-        });
+        return MatchRes{res};
+      });
 
     if (!type) {
       return false;
@@ -630,11 +629,11 @@ bool Compiler::addToEnv(Translator::Level /* level */,
 
 bool Compiler::addToEnv(Translator::Level level, const ast::Declaration &dec) {
   return helpers::match(dec)(
-      [&](const ast::FunctionDeclarations &decs) {
-        return addToEnv(level, decs);
-      },
-      [&](const ast::VarDeclaration &dec) { return addToEnv(level, dec); },
-      [&](const ast::TypeDeclarations &decs) { return addToEnv(level, decs); });
+    [&](const ast::FunctionDeclarations &decs) {
+      return addToEnv(level, decs);
+    },
+    [&](const ast::VarDeclaration &dec) { return addToEnv(level, dec); },
+    [&](const ast::TypeDeclarations &decs) { return addToEnv(level, decs); });
 }
 
 void Compiler::addToEnv(const TypeMap::key_type &name,
@@ -657,30 +656,30 @@ Compiler::Environment Compiler::defaultEnvironment() {
   // primitive types
   auto &typeMap = defaultEnv.m_typeMap;
 
-  typeMap["int"] = s_intType;
+  typeMap["int"]    = s_intType;
   typeMap["string"] = s_stringType;
 
   // standard library
   auto &valueMap = defaultEnv.m_valueMap;
 
   auto standardFunction =
-      [this](const NamedType &resultType,
-             const std::vector<NamedType> &paramTypes = {}) {
-        return FunctionType{resultType, paramTypes, m_tempMap.newLabel(),
-                            m_translator.outermost()};
-      };
+    [this](const NamedType &resultType,
+           const std::vector<NamedType> &paramTypes = {}) {
+      return FunctionType{resultType, paramTypes, m_tempMap.newLabel(),
+                          m_translator.outermost()};
+    };
 
-  valueMap["print"] = standardFunction(s_voidType, {s_stringType});
-  valueMap["flush"] = standardFunction(s_voidType);
+  valueMap["print"]   = standardFunction(s_voidType, {s_stringType});
+  valueMap["flush"]   = standardFunction(s_voidType);
   valueMap["getchar"] = standardFunction(s_stringType);
-  valueMap["ord"] = standardFunction(s_intType, {s_stringType});
-  valueMap["chr"] = standardFunction(s_stringType, {s_intType});
-  valueMap["size"] = standardFunction(s_intType, {s_stringType});
+  valueMap["ord"]     = standardFunction(s_intType, {s_stringType});
+  valueMap["chr"]     = standardFunction(s_stringType, {s_intType});
+  valueMap["size"]    = standardFunction(s_intType, {s_stringType});
   valueMap["substring"] =
-      standardFunction(s_stringType, {s_stringType, s_intType, s_intType});
+    standardFunction(s_stringType, {s_stringType, s_intType, s_intType});
   valueMap["concat"] =
-      standardFunction(s_stringType, {s_stringType, s_stringType});
-  valueMap["not"] = standardFunction(s_intType, {s_intType});
+    standardFunction(s_stringType, {s_stringType, s_stringType});
+  valueMap["not"]  = standardFunction(s_intType, {s_intType});
   valueMap["exit"] = standardFunction(s_voidType, {s_intType});
 
   return defaultEnv;
@@ -700,7 +699,7 @@ Compiler::OptionalValue Compiler::findValue(const std::string &name) const {
 Compiler::OptionalType Compiler::findType(std::string name) const {
   for (auto it = m_environments.rbegin(); it != m_environments.rend(); ++it) {
     for (auto itt = it->m_typeMap.find(name); itt != it->m_typeMap.end();
-         itt = it->m_typeMap.find(name)) {
+         itt      = it->m_typeMap.find(name)) {
       auto res = &itt->second;
       // go through type names
       if (auto typeName = boost::get<NameType>(&res->m_type)) {

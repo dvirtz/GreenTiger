@@ -36,11 +36,11 @@ struct ExpressionStatement;
 enum class Placeholder { INT, LABEL, REGISTER, EXPRESSION };
 
 using Statement =
-    boost::variant<boost::recursive_wrapper<Sequence>, temp::Label,
-                   boost::recursive_wrapper<Jump>,
-                   boost::recursive_wrapper<ConditionalJump>,
-                   boost::recursive_wrapper<Move>,
-                   boost::recursive_wrapper<ExpressionStatement>, Placeholder>;
+  boost::variant<boost::recursive_wrapper<Sequence>, temp::Label,
+                 boost::recursive_wrapper<Jump>,
+                 boost::recursive_wrapper<ConditionalJump>,
+                 boost::recursive_wrapper<Move>,
+                 boost::recursive_wrapper<ExpressionStatement>, Placeholder>;
 
 struct BinaryOperation;
 struct ExpressionSequence;
@@ -61,8 +61,8 @@ struct Sequence {
   // cannot make the initializer_list ctor default because of
   // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=60437
   Sequence() = default;
-  Sequence(std::initializer_list<Statement> statements)
-      : statements{statements} {}
+  Sequence(std::initializer_list<Statement> statements) :
+      statements{statements} {}
   template <typename U>
   Sequence(U &&statements) : statements{std::forward<U>(statements)} {}
 };
@@ -81,11 +81,13 @@ struct ConditionalJump {
   // using shared_ptr as boost::variant 1.65 still doesn't handle move only
   // types correctly see https://svn.boost.org/trac10/ticket/6971
   std::shared_ptr<temp::Label> trueDest, falseDest;
-  ConditionalJump(RelOp op, Expression left, Expression right, const temp::Label &trueDest = {}, const temp::Label &falseDest = {})
-    : op{op}, left{left}, right{right}, 
-      trueDest{std::make_shared<temp::Label>(trueDest)}, falseDest{std::make_shared<temp::Label>(falseDest)}
-  {}
-  
+  ConditionalJump(RelOp op, Expression left, Expression right,
+                  const temp::Label &trueDest  = {},
+                  const temp::Label &falseDest = {}) :
+      op{op},
+      left{left}, right{right}, trueDest{std::make_shared<temp::Label>(
+                                  trueDest)},
+      falseDest{std::make_shared<temp::Label>(falseDest)} {}
 };
 
 struct Move {

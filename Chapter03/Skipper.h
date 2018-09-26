@@ -5,7 +5,8 @@ MSC_DIAG_OFF(4996 4459)
 MSC_DIAG_ON()
 
 namespace tiger {
-template <typename Iterator> class Skipper : public boost::spirit::qi::grammar<Iterator> {
+template <typename Iterator>
+class Skipper : public boost::spirit::qi::grammar<Iterator> {
 public:
   Skipper() : Skipper::base_type(start) {
     namespace ascii = boost::spirit::ascii;
@@ -13,14 +14,11 @@ public:
     using ascii::char_;
     ascii::space_type space;
 
-    start
-      = space                           // tab/space/cr/lf
-      | "/*" >> *(char_ - "*/") >> "*/" // comments
+    start = space                             // tab/space/cr/lf
+            | "/*" >> *(char_ - "*/") >> "*/" // comments
       ;
 
-    BOOST_SPIRIT_DEBUG_NODES(
-      (start)
-    )
+    BOOST_SPIRIT_DEBUG_NODES((start))
   }
 
 private:

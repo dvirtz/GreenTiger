@@ -9,12 +9,10 @@ void EscapeAnalyser::analyse(ast::Expression &exp) {
     [this](ast::VarExpression &varExp) { analyseVar(varExp); },
     [this](ast::LetExpression &letExp) { analyseLet(letExp); },
     [this](ast::ForExpression &forExp) { analyseFor(forExp); },
-    [this](auto& exp) {this->analyse(exp);}
-  );
+    [this](auto &exp) { this->analyse(exp); });
 }
 
-void
-EscapeAnalyser::analyseVar(ast::VarExpression &exp) {
+void EscapeAnalyser::analyseVar(ast::VarExpression &exp) {
   // search environments for this variable
   for (auto it = m_environments.rbegin(); it != m_environments.rend(); ++it) {
     auto itt = it->find(exp.first);
@@ -26,24 +24,20 @@ EscapeAnalyser::analyseVar(ast::VarExpression &exp) {
     }
   }
 
-  for (auto& r : exp.rest)
-  {
-    helpers::match(r)(
-      [this](ast::Subscript& s) {analyse(s.exp);},
-      [](auto& /*default*/) {}
-    );
+  for (auto &r : exp.rest) {
+    helpers::match(r)([this](ast::Subscript &s) { analyse(s.exp); },
+                      [](auto & /*default*/) {});
   }
 }
 
-void
-EscapeAnalyser::analyseLet(ast::LetExpression &exp) {
+void EscapeAnalyser::analyseLet(ast::LetExpression &exp) {
   m_environments.emplace_back();
 
   for (auto &dec : exp.decs) {
     helpers::match(dec)(
-        [&](ast::FunctionDeclarations &decs) { analyseFuncDec(decs); },
-        [&](ast::VarDeclaration &dec) { analyseVarDec(dec); },
-        [&](auto & /*default*/) {});
+      [&](ast::FunctionDeclarations &decs) { analyseFuncDec(decs); },
+      [&](ast::VarDeclaration &dec) { analyseVarDec(dec); },
+      [&](auto & /*default*/) {});
   }
 
   analyse(exp.body);
@@ -51,8 +45,7 @@ EscapeAnalyser::analyseLet(ast::LetExpression &exp) {
   m_environments.pop_back();
 }
 
-void
-EscapeAnalyser::analyseFuncDec(ast::FunctionDeclarations &decs) {
+void EscapeAnalyser::analyseFuncDec(ast::FunctionDeclarations &decs) {
   for (auto &dec : decs) {
     Environment newEnv;
     for (auto &param : dec.params) {
@@ -61,21 +54,19 @@ EscapeAnalyser::analyseFuncDec(ast::FunctionDeclarations &decs) {
     }
 
     m_environments.push_back(std::move(newEnv));
-    
+
     analyse(dec.body);
 
     m_environments.pop_back();
   }
 }
 
-void
-EscapeAnalyser::analyseVarDec(ast::VarDeclaration &dec) {
+void EscapeAnalyser::analyseVarDec(ast::VarDeclaration &dec) {
   dec.escapes = false;
   m_environments.back().emplace(dec.name, dec.escapes);
 }
 
-void
-EscapeAnalyser::analyseFor(ast::ForExpression &exp) {
+void EscapeAnalyser::analyseFor(ast::ForExpression &exp) {
   exp.escapes = false;
   Environment newEnv;
   newEnv.emplace(exp.var.name, exp.escapes);

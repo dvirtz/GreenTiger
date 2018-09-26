@@ -14,7 +14,7 @@ public:
   static const int WORD_SIZE = 8;
 
   Frame(temp::Map &tempMap, const temp::Label &name, const BoolList &formals);
-  
+
   // Inherited via Frame
   virtual temp::Label name() const override;
 
@@ -22,9 +22,11 @@ public:
 
   virtual VariableAccess allocateLocal(bool escapes) override;
 
-  virtual ir::Statement procEntryExit1(const ir::Statement& body) const override;
+  virtual ir::Statement
+    procEntryExit1(const ir::Statement &body) const override;
 
-  assembly::Instructions procEntryExit3(const assembly::Instructions &body) const override;
+  assembly::Instructions
+    procEntryExit3(const assembly::Instructions &body) const override;
 
 private:
   temp::Label m_name;
@@ -32,7 +34,7 @@ private:
   int m_frameOffset = -WORD_SIZE;
   // The __fastcall convention uses registers for the first four arguments
   static const size_t MAX_REGS = 4;
-  size_t m_allocatedRegs = 0;
+  size_t m_allocatedRegs       = 0;
 };
 } // namespace x64
 } // namespace frame

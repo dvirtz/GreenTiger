@@ -1,9 +1,9 @@
 #include "Program.h"
-#include "ExpressionParser.h"
 #include "Compiler.h"
 #include "EscapeAnalyser.h"
-#include "x64FastCall/CallingConvention.h"
+#include "ExpressionParser.h"
 #include "Translator.h"
+#include "x64FastCall/CallingConvention.h"
 #include <boost/spirit/include/classic_position_iterator.hpp>
 #include <boost/spirit/include/support_multi_pass.hpp>
 #include <fstream>
@@ -11,16 +11,16 @@
 namespace tiger {
 
 namespace spirit = boost::spirit;
-namespace qi = spirit::qi;
+namespace qi     = spirit::qi;
 
 namespace detail {
 
 template <typename Iterator>
 bool compile(Iterator &first, const Iterator &last) {
-  using Grammer = ExpressionParser<Iterator>;
-  using Skipper = Skipper<Iterator>;
+  using Grammer      = ExpressionParser<Iterator>;
+  using Skipper      = Skipper<Iterator>;
   using ErrorHandler = ErrorHandler<Iterator>;
-  using Annotation = Annotation<Iterator>;
+  using Annotation   = Annotation<Iterator>;
 
   ErrorHandler errorHandler;
   Annotation annotation;
@@ -46,7 +46,7 @@ bool compile(Iterator &first, const Iterator &last) {
     if (!compiler.compile(ast)) {
       return false;
     }
-    
+
     return true;
   }
 
@@ -62,12 +62,12 @@ bool compileFile(const std::string &filename) {
     return false;
   }
 
-  using FileIterator = std::istreambuf_iterator<char>;
+  using FileIterator    = std::istreambuf_iterator<char>;
   using ForwardIterator = spirit::multi_pass<FileIterator>;
-  using Iterator = spirit::classic::position_iterator2<ForwardIterator>;
+  using Iterator        = spirit::classic::position_iterator2<ForwardIterator>;
 
   Iterator first{ForwardIterator(FileIterator(inputFile)), ForwardIterator(),
-                filename};
+                 filename};
   Iterator last;
 
   return detail::compile(first, last);
@@ -75,10 +75,10 @@ bool compileFile(const std::string &filename) {
 
 bool compile(const std::string &string) {
   using ForwardIterator = std::string::const_iterator;
-  using Iterator = spirit::classic::position_iterator2<ForwardIterator>;
+  using Iterator        = spirit::classic::position_iterator2<ForwardIterator>;
 
-  Iterator first{ ForwardIterator(string.begin()), ForwardIterator(string.end()),
-    "STRING" };
+  Iterator first{ForwardIterator(string.begin()), ForwardIterator(string.end()),
+                 "STRING"};
   Iterator last;
 
   return detail::compile(first, last);

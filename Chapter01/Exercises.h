@@ -12,9 +12,9 @@ template <typename Key> struct Tree {
   Key m_key;
   TreePtr<Key> m_rhs;
 
-  Tree(const TreePtr<Key> &lhs, const Key &key, const TreePtr<Key> &rhs)
-      : m_lhs(lhs ? std::make_unique<Tree>(*lhs) : nullptr), m_key(key),
-        m_rhs(rhs ? std::make_unique<Tree>(*rhs) : nullptr) {}
+  Tree(const TreePtr<Key> &lhs, const Key &key, const TreePtr<Key> &rhs) :
+      m_lhs(lhs ? std::make_unique<Tree>(*lhs) : nullptr), m_key(key),
+      m_rhs(rhs ? std::make_unique<Tree>(*rhs) : nullptr) {}
 
   Tree(const Tree &other) : Tree(other.m_lhs, other.m_key, other.m_rhs) {}
 };
@@ -51,19 +51,19 @@ template <typename Key, typename Payload> struct PayloadTree {
   PayloadTreePtr<Key, Payload> m_rhs;
 
   PayloadTree(const PayloadTreePtr<Key, Payload> &lhs, const Key &key,
-              const Payload &payload, const PayloadTreePtr<Key, Payload> &rhs)
-      : m_lhs(lhs ? std::make_unique<PayloadTree>(*lhs) : nullptr), m_key(key),
-        m_payload(payload),
-        m_rhs(rhs ? std::make_unique<PayloadTree>(*rhs) : nullptr) {}
+              const Payload &payload, const PayloadTreePtr<Key, Payload> &rhs) :
+      m_lhs(lhs ? std::make_unique<PayloadTree>(*lhs) : nullptr),
+      m_key(key), m_payload(payload),
+      m_rhs(rhs ? std::make_unique<PayloadTree>(*rhs) : nullptr) {}
 
-  PayloadTree(const PayloadTree &other)
-      : PayloadTree(other.m_lhs, other.m_key, other.m_payload, other.m_rhs) {}
+  PayloadTree(const PayloadTree &other) :
+      PayloadTree(other.m_lhs, other.m_key, other.m_payload, other.m_rhs) {}
 };
 
 template <typename Key, typename Payload>
 PayloadTreePtr<Key, Payload>
-insertPayload(const Key &key, const Payload &payload,
-              const PayloadTreePtr<Key, Payload> &tree = {});
+  insertPayload(const Key &key, const Payload &payload,
+                const PayloadTreePtr<Key, Payload> &tree = {});
 
 template <typename Key, typename Payload>
 Payload lookup(const Key &key, const PayloadTreePtr<Key, Payload> &tree);

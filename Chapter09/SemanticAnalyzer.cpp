@@ -12,26 +12,27 @@ const NamedType SemanticAnalyzer::s_nilType{"nil", NilType{}};
 FragmentList SemanticAnalyzer::compile(const ast::Expression &ast) {
   m_functionLevels.push_back(m_translator.outermost());
   auto compiled = compileExpression(ast);
-  m_translator.translateFunction(m_translator.topLevel(), m_tempMap.namedLabel("main"), 
-     m_translator.toExpression(compiled.m_translated));
+  m_translator.translateFunction(
+    m_translator.topLevel(), m_tempMap.namedLabel("main"),
+    m_translator.toExpression(compiled.m_translated));
   return m_translator.result();
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::Expression &ast) {
+  SemanticAnalyzer::compileExpression(const ast::Expression &ast) {
   return helpers::match(ast)(
-      [=](auto &exp) { return this->compileExpression(exp); });
+    [=](auto &exp) { return this->compileExpression(exp); });
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::NilExpression & /*exp*/) {
+  SemanticAnalyzer::compileExpression(const ast::NilExpression & /*exp*/) {
   return CompiledExpression{s_nilType};
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::VarExpression &exp) {
+  SemanticAnalyzer::compileExpression(const ast::VarExpression &exp) {
   std::string name = exp.first;
-  auto val = findValue(name);
+  auto val         = findValue(name);
   if (!val) {
     m_errorHandler(exp.id, "Unknown identifier " + name);
   }
@@ -44,55 +45,53 @@ SemanticAnalyzer::compileExpression(const ast::VarExpression &exp) {
   auto namedType = var->m_type;
 
   auto translatedExp =
-      m_translator.translateVar(m_functionLevels, var->m_access);
+    m_translator.translateVar(m_functionLevels, var->m_access);
 
   for (const auto &v : exp.rest) {
     if (!helpers::match(v)(
-            [&](const ast::VarField &vf) -> bool {
-              auto record = boost::get<RecordType>(&namedType.m_type);
-              if (!record) {
-                m_errorHandler(vf.name.id, "Expression must be of record type");
-              }
-              auto it =
-                  std::find_if(record->m_fields.begin(), record->m_fields.end(),
-                               [&](const auto &field) {
-                                 return field.m_name == vf.name.name;
-                               });
-              if (it == record->m_fields.end()) {
-                m_errorHandler(vf.name.id,
-                               "Unknown record member " + vf.name.name);
-              }
+          [&](const ast::VarField &vf) -> bool {
+            auto record = boost::get<RecordType>(&namedType.m_type);
+            if (!record) {
+              m_errorHandler(vf.name.id, "Expression must be of record type");
+            }
+            auto it = std::find_if(
+              record->m_fields.begin(), record->m_fields.end(),
+              [&](const auto &field) { return field.m_name == vf.name.name; });
+            if (it == record->m_fields.end()) {
+              m_errorHandler(vf.name.id,
+                             "Unknown record member " + vf.name.name);
+            }
 
-              // since each member is a scalar this is the same as array access
-              translatedExp = m_translator.translateArrayAccess(
-                  translatedExp, static_cast<int>(std::distance(
-                                     record->m_fields.begin(), it)));
+            // since each member is a scalar this is the same as array access
+            translatedExp = m_translator.translateArrayAccess(
+              translatedExp,
+              static_cast<int>(std::distance(record->m_fields.begin(), it)));
 
-              auto tmp = std::move(it->m_type);
-              namedType = tmp;
+            auto tmp  = std::move(it->m_type);
+            namedType = tmp;
 
-              return true;
-            },
-            [&](const ast::Subscript &s) -> bool {
-              auto compiledExp = compileExpression(s.exp);
-              if (!hasType<IntType>(compiledExp)) {
-                m_errorHandler(id(s.exp),
-                               "Subscript expression must be of integer type");
-              }
-              auto array = boost::get<ArrayType>(&namedType.m_type);
-              if (!array) {
-                m_errorHandler(id(s.exp), "Expression must be of array type");
-              }
+            return true;
+          },
+          [&](const ast::Subscript &s) -> bool {
+            auto compiledExp = compileExpression(s.exp);
+            if (!hasType<IntType>(compiledExp)) {
+              m_errorHandler(id(s.exp),
+                             "Subscript expression must be of integer type");
+            }
+            auto array = boost::get<ArrayType>(&namedType.m_type);
+            if (!array) {
+              m_errorHandler(id(s.exp), "Expression must be of array type");
+            }
 
-              translatedExp = m_translator.translateArrayAccess(
-                  translatedExp,
-                  boost::get<ir::Expression>(compiledExp.m_translated));
+            translatedExp = m_translator.translateArrayAccess(
+              translatedExp,
+              boost::get<ir::Expression>(compiledExp.m_translated));
 
-              auto tmp = array->m_elementType;
-              namedType = tmp;
+            auto tmp  = array->m_elementType;
+            namedType = tmp;
 
-              return true;
-            })) {
+            return true;
+          })) {
       return {};
     }
   }
@@ -101,19 +100,19 @@ SemanticAnalyzer::compileExpression(const ast::VarExpression &exp) {
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::IntExpression &exp) {
+  SemanticAnalyzer::compileExpression(const ast::IntExpression &exp) {
   return CompiledExpression{s_intType, m_translator.translateConstant(exp.i)};
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::StringExpression &exp) {
+  SemanticAnalyzer::compileExpression(const ast::StringExpression &exp) {
   return CompiledExpression{s_stringType, m_translator.translateString(exp.s)};
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::CallExpression &exp) {
+  SemanticAnalyzer::compileExpression(const ast::CallExpression &exp) {
   std::string name = exp.func;
-  auto val = findValue(name);
+  auto val         = findValue(name);
   if (!val) {
     m_errorHandler(exp.func.id, "Unknown function " + name);
   }
@@ -124,10 +123,9 @@ SemanticAnalyzer::compileExpression(const ast::CallExpression &exp) {
 
   const auto &paramTypes = func->m_parameterTypes;
   if (exp.args.size() != paramTypes.size()) {
-    m_errorHandler(exp.func.id, "Expecting " +
-                                    std::to_string(paramTypes.size()) +
-                                    " parameters, " +
-                                    std::to_string(exp.args.size()) + " given");
+    m_errorHandler(exp.func.id, "Expecting " + std::to_string(paramTypes.size())
+                                  + " parameters, "
+                                  + std::to_string(exp.args.size()) + " given");
   }
 
   std::vector<NamedType> argTypes;
@@ -140,46 +138,46 @@ SemanticAnalyzer::compileExpression(const ast::CallExpression &exp) {
 
   for (size_t i = 0; i < argTypes.size(); ++i) {
     if (!equalTypes(argTypes[i], paramTypes[i])) {
-      m_errorHandler(id(exp.args[i]), "Wrong type of parameter " +
-                                          std::to_string(i) + ", expecting " +
-                                          paramTypes[i].m_name + ", got " +
-                                          argTypes[i].m_name);
+      m_errorHandler(id(exp.args[i]), "Wrong type of parameter "
+                                        + std::to_string(i) + ", expecting "
+                                        + paramTypes[i].m_name + ", got "
+                                        + argTypes[i].m_name);
     }
   }
 
   return CompiledExpression{
-      func->m_resultType,
-      m_translator.translateCall(m_functionLevels, func->m_label, func->m_declerationLevel,
-                                 translatedArgs)};
+    func->m_resultType,
+    m_translator.translateCall(m_functionLevels, func->m_label,
+                               func->m_declerationLevel, translatedArgs)};
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::ArithmeticExpression &exp) {
+  SemanticAnalyzer::compileExpression(const ast::ArithmeticExpression &exp) {
   auto lhs = compileExpression(exp.first);
 
   auto checkType = [this](ast::Operation operation,
                           const CompiledExpression &exp, size_t id) {
     switch (operation) {
-    case ast::Operation::EQUAL:
-    case ast::Operation::NOT_EQUAL:
-      // any type is OK
-      break;
+      case ast::Operation::EQUAL:
+      case ast::Operation::NOT_EQUAL:
+        // any type is OK
+        break;
 
-    case ast::Operation::LESS_THEN:
-    case ast::Operation::LESS_EQUAL:
-    case ast::Operation::GREATER_THEN:
-    case ast::Operation::GREATER_EQUAL:
-      // int or string
-      if (!hasType<IntType>(exp) && !hasType<StringType>(exp)) {
-        m_errorHandler(id, "Expression must be of type int or string");
-      }
-      break;
+      case ast::Operation::LESS_THEN:
+      case ast::Operation::LESS_EQUAL:
+      case ast::Operation::GREATER_THEN:
+      case ast::Operation::GREATER_EQUAL:
+        // int or string
+        if (!hasType<IntType>(exp) && !hasType<StringType>(exp)) {
+          m_errorHandler(id, "Expression must be of type int or string");
+        }
+        break;
 
-    default:
-      // other operations must have int type
-      if (!hasType<IntType>(exp)) {
-        m_errorHandler(id, "Expression must be of type int");
-      }
+      default:
+        // other operations must have int type
+        if (!hasType<IntType>(exp)) {
+          m_errorHandler(id, "Expression must be of type int");
+        }
     }
   };
 
@@ -188,7 +186,7 @@ SemanticAnalyzer::compileExpression(const ast::ArithmeticExpression &exp) {
   }
 
   auto translated = lhs.m_translated;
-  auto isString = hasType<StringType>(lhs);
+  auto isString   = hasType<StringType>(lhs);
 
   for (const auto &opExp : exp.rest) {
     auto rhs = compileExpression(opExp.exp);
@@ -199,31 +197,31 @@ SemanticAnalyzer::compileExpression(const ast::ArithmeticExpression &exp) {
     }
 
     switch (opExp.op) {
-    case ast::Operation::PLUS:
-    case ast::Operation::MINUS:
-    case ast::Operation::TIMES:
-    case ast::Operation::DIVIDE:
-    case ast::Operation::AND:
-    case ast::Operation::OR:
-      translated = m_translator.translateArithmetic(
+      case ast::Operation::PLUS:
+      case ast::Operation::MINUS:
+      case ast::Operation::TIMES:
+      case ast::Operation::DIVIDE:
+      case ast::Operation::AND:
+      case ast::Operation::OR:
+        translated = m_translator.translateArithmetic(
           toBinOp(opExp.op), translated, rhs.m_translated);
-      break;
-    case ast::Operation::EQUAL:
-    case ast::Operation::NOT_EQUAL:
-    case ast::Operation::LESS_THEN:
-    case ast::Operation::GREATER_THEN:
-    case ast::Operation::LESS_EQUAL:
-    case ast::Operation::GREATER_EQUAL:
-      if (isString) {
-        translated = m_translator.translateStringCompare(
+        break;
+      case ast::Operation::EQUAL:
+      case ast::Operation::NOT_EQUAL:
+      case ast::Operation::LESS_THEN:
+      case ast::Operation::GREATER_THEN:
+      case ast::Operation::LESS_EQUAL:
+      case ast::Operation::GREATER_EQUAL:
+        if (isString) {
+          translated = m_translator.translateStringCompare(
             toRelOp(opExp.op), translated, rhs.m_translated);
-      } else {
-        translated = m_translator.translateRelation(
+        } else {
+          translated = m_translator.translateRelation(
             toRelOp(opExp.op), translated, rhs.m_translated);
-      }
-      break;
-    default:
-      assert(false && "Unexpected operation");
+        }
+        break;
+      default:
+        assert(false && "Unexpected operation");
     }
   }
 
@@ -231,7 +229,7 @@ SemanticAnalyzer::compileExpression(const ast::ArithmeticExpression &exp) {
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::RecordExpression &exp) {
+  SemanticAnalyzer::compileExpression(const ast::RecordExpression &exp) {
   auto type = findType(exp.type);
   if (!type) {
     m_errorHandler(exp.type.id, "Undeclared type " + exp.type.name);
@@ -245,9 +243,9 @@ SemanticAnalyzer::compileExpression(const ast::RecordExpression &exp) {
   const auto &recordFields = recordType->m_fields;
   if (exp.fields.size() != recordFields.size()) {
     m_errorHandler(exp.type.id,
-                   "Expecting " + std::to_string(recordFields.size()) +
-                       " fields, " + std::to_string(exp.fields.size()) +
-                       " given");
+                   "Expecting " + std::to_string(recordFields.size())
+                     + " fields, " + std::to_string(exp.fields.size())
+                     + " given");
   }
 
   std::vector<NamedType> fieldTypes;
@@ -261,9 +259,9 @@ SemanticAnalyzer::compileExpression(const ast::RecordExpression &exp) {
   for (size_t i = 0; i < fieldTypes.size(); ++i) {
     if (!equalTypes(fieldTypes[i], recordFields[i].m_type)) {
       m_errorHandler(exp.fields[i].name.id,
-                     "Wrong type of field " + std::to_string(i) +
-                         " expecting " + recordFields[i].m_type.m_name +
-                         ", got " + fieldTypes[i].m_name);
+                     "Wrong type of field " + std::to_string(i) + " expecting "
+                       + recordFields[i].m_type.m_name + ", got "
+                       + fieldTypes[i].m_name);
     }
   }
 
@@ -272,23 +270,23 @@ SemanticAnalyzer::compileExpression(const ast::RecordExpression &exp) {
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::AssignExpression &exp) {
+  SemanticAnalyzer::compileExpression(const ast::AssignExpression &exp) {
   auto varType = compileExpression(exp.var);
   auto expType = compileExpression(exp.exp);
 
   if (!equalTypes(varType, expType)) {
-    m_errorHandler(id(exp.var), "Type " + expType.m_type.m_name +
-                                    " cannot be assigned to type " +
-                                    varType.m_type.m_name);
+    m_errorHandler(id(exp.var), "Type " + expType.m_type.m_name
+                                  + " cannot be assigned to type "
+                                  + varType.m_type.m_name);
   }
 
   return CompiledExpression{
-      s_voidType, m_translator.translateAssignment(varType.m_translated,
-                                                   expType.m_translated)};
+    s_voidType, m_translator.translateAssignment(varType.m_translated,
+                                                 expType.m_translated)};
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::IfExpression &exp) {
+  SemanticAnalyzer::compileExpression(const ast::IfExpression &exp) {
   auto test = compileExpression(exp.test);
 
   if (!hasType<IntType>(test)) {
@@ -321,12 +319,12 @@ SemanticAnalyzer::compileExpression(const ast::IfExpression &exp) {
   }
 
   auto translated = m_translator.translateConditional(
-      test.m_translated, thenExp.m_translated, translatedElse);
+    test.m_translated, thenExp.m_translated, translatedElse);
   return CompiledExpression{thenExp.m_type, translated};
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::WhileExpression &exp) {
+  SemanticAnalyzer::compileExpression(const ast::WhileExpression &exp) {
   auto test = compileExpression(exp.test);
   if (!hasType<IntType>(test)) {
     m_errorHandler(id(exp.test), "Expression must be of type int");
@@ -340,9 +338,9 @@ SemanticAnalyzer::compileExpression(const ast::WhileExpression &exp) {
     m_errorHandler(id(exp.body), "Expression must produce no value");
   }
 
-  CompiledExpression res{s_voidType, m_translator.translateWhileLoop(
-                                         test.m_translated, body.m_translated,
-                                         m_breakTargets.back())};
+  CompiledExpression res{
+    s_voidType, m_translator.translateWhileLoop(
+                  test.m_translated, body.m_translated, m_breakTargets.back())};
 
   m_breakTargets.pop_back();
 
@@ -350,7 +348,7 @@ SemanticAnalyzer::compileExpression(const ast::WhileExpression &exp) {
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::BreakExpression &exp) {
+  SemanticAnalyzer::compileExpression(const ast::BreakExpression &exp) {
   if (m_breakTargets.empty()) {
     m_errorHandler(id(exp), "break is only legal within a while or a for loop");
   };
@@ -360,7 +358,7 @@ SemanticAnalyzer::compileExpression(const ast::BreakExpression &exp) {
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::ForExpression &exp) {
+  SemanticAnalyzer::compileExpression(const ast::ForExpression &exp) {
   auto fromExp = compileExpression(exp.lo);
   if (!hasType<IntType>(fromExp)) {
     m_errorHandler(id(exp.lo), "Expression must be of type int");
@@ -372,7 +370,7 @@ SemanticAnalyzer::compileExpression(const ast::ForExpression &exp) {
   }
 
   VariableType forVar{s_intType, m_translator.allocateLocal(
-                                     m_functionLevels.back(), exp.escapes)};
+                                   m_functionLevels.back(), exp.escapes)};
 
   m_environments.emplace_back();
   addToEnv(exp.var, forVar);
@@ -388,11 +386,10 @@ SemanticAnalyzer::compileExpression(const ast::ForExpression &exp) {
   }
 
   CompiledExpression res{
-      s_voidType,
-      m_translator.translateForLoop(
-          m_translator.translateVar(m_functionLevels, forVar.m_access),
-          fromExp.m_translated, toExp.m_translated, bodyExp.m_translated,
-          m_breakTargets.back())};
+    s_voidType, m_translator.translateForLoop(
+                  m_translator.translateVar(m_functionLevels, forVar.m_access),
+                  fromExp.m_translated, toExp.m_translated,
+                  bodyExp.m_translated, m_breakTargets.back())};
 
   m_breakTargets.pop_back();
 
@@ -400,7 +397,7 @@ SemanticAnalyzer::compileExpression(const ast::ForExpression &exp) {
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::LetExpression &exp) {
+  SemanticAnalyzer::compileExpression(const ast::LetExpression &exp) {
   m_environments.emplace_back();
 
   std::vector<translator::Expression> decs, exps;
@@ -413,7 +410,7 @@ SemanticAnalyzer::compileExpression(const ast::LetExpression &exp) {
   std::transform(exp.body.begin(), exp.body.end(), std::back_inserter(exps),
                  [this, &resType](const ast::Expression &exp) {
                    auto compiled = compileExpression(exp);
-                   resType = compiled.m_type;
+                   resType       = compiled.m_type;
                    return compiled.m_translated;
                  });
 
@@ -423,7 +420,7 @@ SemanticAnalyzer::compileExpression(const ast::LetExpression &exp) {
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::ArrayExpression &exp) {
+  SemanticAnalyzer::compileExpression(const ast::ArrayExpression &exp) {
   auto type = findType(exp.type);
   if (!type) {
     m_errorHandler(exp.type.id, "Undeclared type " + exp.type.name);
@@ -441,18 +438,18 @@ SemanticAnalyzer::compileExpression(const ast::ArrayExpression &exp) {
 
   auto initExp = compileExpression(exp.init);
   if (!equalTypes(arrayType->m_elementType, initExp.m_type)) {
-    m_errorHandler(id(exp.init), "Cannot initialize an array of " +
-                                     arrayType->m_elementType.m_name +
-                                     " from type " + initExp.m_type.m_name);
+    m_errorHandler(id(exp.init), "Cannot initialize an array of "
+                                   + arrayType->m_elementType.m_name
+                                   + " from type " + initExp.m_type.m_name);
   }
 
   return CompiledExpression{
-      *type,
-      m_translator.translateArray(sizeExp.m_translated, initExp.m_translated)};
+    *type,
+    m_translator.translateArray(sizeExp.m_translated, initExp.m_translated)};
 }
 
 SemanticAnalyzer::result_type
-SemanticAnalyzer::compileExpression(const ast::ExpressionSequence &exp) {
+  SemanticAnalyzer::compileExpression(const ast::ExpressionSequence &exp) {
   CompiledExpression res{s_voidType};
 
   std::vector<translator::Expression> translated;
@@ -461,27 +458,27 @@ SemanticAnalyzer::compileExpression(const ast::ExpressionSequence &exp) {
                  std::back_inserter(translated),
                  [this, &res](const ast::Expression &exp) {
                    auto compiled = compileExpression(exp);
-                   res.m_type = compiled.m_type;
+                   res.m_type    = compiled.m_type;
                    return compiled.m_translated;
                  });
 
   switch (translated.size()) {
-  case 0:
-    break;
-  case 1:
-    res.m_translated = translated.front();
-    break;
-  default:
-    // translated same as let with no declarations
-    res.m_translated = m_translator.translateLet({}, translated);
-    break;
+    case 0:
+      break;
+    case 1:
+      res.m_translated = translated.front();
+      break;
+    default:
+      // translated same as let with no declarations
+      res.m_translated = m_translator.translateLet({}, translated);
+      break;
   }
 
   return res;
 }
 
 SemanticAnalyzer::CompiledDeclaration
-SemanticAnalyzer::addToEnv(const ast::FunctionDeclarations &decs) {
+  SemanticAnalyzer::addToEnv(const ast::FunctionDeclarations &decs) {
   // first pass, compile function signatures
   // to support recursive functions
   for (const auto &dec : decs) {
@@ -508,7 +505,7 @@ SemanticAnalyzer::addToEnv(const ast::FunctionDeclarations &decs) {
       function.m_parameterTypes.push_back(*type);
     }
 
-    function.m_label = m_tempMap.newLabel();
+    function.m_label            = m_tempMap.newLabel();
     function.m_declerationLevel = m_functionLevels.back();
     function.m_bodyLevel = m_translator.newLevel(function.m_label, formals);
     addToEnv(dec.name, function);
@@ -537,18 +534,19 @@ SemanticAnalyzer::addToEnv(const ast::FunctionDeclarations &decs) {
     m_environments.pop_back();
 
     if (!equalTypes(compiled.m_type, funcType->m_resultType)) {
-      m_errorHandler(id(dec.body), "Function body type must be " +
-                                       funcType->m_resultType.m_name);
+      m_errorHandler(id(dec.body), "Function body type must be "
+                                     + funcType->m_resultType.m_name);
     }
 
-    m_translator.translateFunction(funcType->m_bodyLevel, funcType->m_label, compiled.m_translated);
+    m_translator.translateFunction(funcType->m_bodyLevel, funcType->m_label,
+                                   compiled.m_translated);
   }
 
   return {};
 }
 
 SemanticAnalyzer::CompiledDeclaration
-SemanticAnalyzer::addToEnv(const ast::VarDeclaration &dec) {
+  SemanticAnalyzer::addToEnv(const ast::VarDeclaration &dec) {
   auto compiled = compileExpression(dec.init);
 
   VariableType var;
@@ -567,8 +565,8 @@ SemanticAnalyzer::addToEnv(const ast::VarDeclaration &dec) {
     var.m_type = *type;
   } else if (hasType<NilType>(compiled)) {
     m_errorHandler(
-        id(dec.init),
-        "nil can only be used in a context where its type can be determined");
+      id(dec.init),
+      "nil can only be used in a context where its type can be determined");
   } else if (hasType<VoidType>(compiled)) {
     m_errorHandler(id(dec.init), "expression has no value");
   } else {
@@ -576,17 +574,17 @@ SemanticAnalyzer::addToEnv(const ast::VarDeclaration &dec) {
   }
 
   var.m_access =
-      m_translator.allocateLocal(m_functionLevels.back(), dec.escapes);
+    m_translator.allocateLocal(m_functionLevels.back(), dec.escapes);
 
   addToEnv(dec.name, var);
 
   return m_translator.translateVarDecleration(
-      m_translator.translateVar(m_functionLevels, var.m_access),
-      compiled.m_translated);
+    m_translator.translateVar(m_functionLevels, var.m_access),
+    compiled.m_translated);
 }
 
 SemanticAnalyzer::CompiledDeclaration
-SemanticAnalyzer::addToEnv(const ast::TypeDeclarations &decs) {
+  SemanticAnalyzer::addToEnv(const ast::TypeDeclarations &decs) {
   // first pass, add type names to environment
   // to support recursive types
   for (const auto &dec : decs) {
@@ -596,42 +594,41 @@ SemanticAnalyzer::addToEnv(const ast::TypeDeclarations &decs) {
   // second pass, compile declarations
   for (const auto &dec : decs) {
     using MatchRes = boost::optional<Type>;
-    auto type = helpers::match(dec.type)(
-        [&](const ast::NameType &nameType) -> MatchRes {
-          auto type = findType(nameType.type);
+    auto type      = helpers::match(dec.type)(
+      [&](const ast::NameType &nameType) -> MatchRes {
+        auto type = findType(nameType.type);
+        if (!type) {
+          m_errorHandler(nameType.type.id,
+                         "Undeclared type " + nameType.type.name);
+        }
+
+        if (type->m_name == dec.name.name) {
+          m_errorHandler(dec.name.id, "Cyclic recursive deceleration");
+        }
+
+        return MatchRes{NameType{type->m_name}};
+      },
+      [&](const ast::ArrayType &arrayType) -> MatchRes {
+        auto type = findType(arrayType.type);
+        if (!type) {
+          m_errorHandler(arrayType.type.id,
+                         "Undeclared type " + arrayType.type.name);
+        }
+
+        return MatchRes{ArrayType{*type}};
+      },
+      [&](const ast::RecordType &recordType) -> MatchRes {
+        RecordType res;
+        for (const auto &field : recordType.fields) {
+          auto type = findType(field.type);
           if (!type) {
-            m_errorHandler(nameType.type.id,
-                           "Undeclared type " + nameType.type.name);
+            m_errorHandler(field.type.id, "Undeclared type " + field.type.name);
           }
+          res.m_fields.push_back({field.name, *type});
+        }
 
-          if (type->m_name == dec.name.name) {
-            m_errorHandler(dec.name.id, "Cyclic recursive deceleration");
-          }
-
-          return MatchRes{NameType{type->m_name}};
-        },
-        [&](const ast::ArrayType &arrayType) -> MatchRes {
-          auto type = findType(arrayType.type);
-          if (!type) {
-            m_errorHandler(arrayType.type.id,
-                           "Undeclared type " + arrayType.type.name);
-          }
-
-          return MatchRes{ArrayType{*type}};
-        },
-        [&](const ast::RecordType &recordType) -> MatchRes {
-          RecordType res;
-          for (const auto &field : recordType.fields) {
-            auto type = findType(field.type);
-            if (!type) {
-              m_errorHandler(field.type.id,
-                             "Undeclared type " + field.type.name);
-            }
-            res.m_fields.push_back({field.name, *type});
-          }
-
-          return MatchRes{res};
-        });
+        return MatchRes{res};
+      });
 
     if (!type) {
       return {};
@@ -655,9 +652,9 @@ SemanticAnalyzer::addToEnv(const ast::TypeDeclarations &decs) {
 }
 
 SemanticAnalyzer::CompiledDeclaration
-SemanticAnalyzer::addToEnv(const ast::Declaration &dec) {
+  SemanticAnalyzer::addToEnv(const ast::Declaration &dec) {
   return helpers::match(dec)(
-      [&](const auto &decs) { return this->addToEnv(decs); });
+    [&](const auto &decs) { return this->addToEnv(decs); });
 }
 
 void SemanticAnalyzer::addToEnv(const TypeMap::key_type &name,
@@ -672,41 +669,41 @@ void SemanticAnalyzer::addToEnv(const ValueMap::key_type &name,
 
 ir::BinOp SemanticAnalyzer::toBinOp(ast::Operation op) {
   switch (op) {
-  case ast::Operation::PLUS:
-    return ir::BinOp::PLUS;
-  case ast::Operation::MINUS:
-    return ir::BinOp::MINUS;
-  case ast::Operation::TIMES:
-    return ir::BinOp::MUL;
-  case ast::Operation::DIVIDE:
-    return ir::BinOp::DIV;
-  case ast::Operation::AND:
-    return ir::BinOp::AND;
-  case ast::Operation::OR:
-    return ir::BinOp::OR;
-  default:
-    assert(false && "Unexpected operation");
-    return {};
+    case ast::Operation::PLUS:
+      return ir::BinOp::PLUS;
+    case ast::Operation::MINUS:
+      return ir::BinOp::MINUS;
+    case ast::Operation::TIMES:
+      return ir::BinOp::MUL;
+    case ast::Operation::DIVIDE:
+      return ir::BinOp::DIV;
+    case ast::Operation::AND:
+      return ir::BinOp::AND;
+    case ast::Operation::OR:
+      return ir::BinOp::OR;
+    default:
+      assert(false && "Unexpected operation");
+      return {};
   }
 }
 
 ir::RelOp SemanticAnalyzer::toRelOp(ast::Operation op) {
   switch (op) {
-  case ast::Operation::EQUAL:
-    return ir::RelOp::EQ;
-  case ast::Operation::NOT_EQUAL:
-    return ir::RelOp::NE;
-  case ast::Operation::LESS_THEN:
-    return ir::RelOp::LT;
-  case ast::Operation::GREATER_THEN:
-    return ir::RelOp::GT;
-  case ast::Operation::LESS_EQUAL:
-    return ir::RelOp::LE;
-  case ast::Operation::GREATER_EQUAL:
-    return ir::RelOp::GE;
-  default:
-    assert(false && "Unexpected operation");
-    return {};
+    case ast::Operation::EQUAL:
+      return ir::RelOp::EQ;
+    case ast::Operation::NOT_EQUAL:
+      return ir::RelOp::NE;
+    case ast::Operation::LESS_THEN:
+      return ir::RelOp::LT;
+    case ast::Operation::GREATER_THEN:
+      return ir::RelOp::GT;
+    case ast::Operation::LESS_EQUAL:
+      return ir::RelOp::LE;
+    case ast::Operation::GREATER_EQUAL:
+      return ir::RelOp::GE;
+    default:
+      assert(false && "Unexpected operation");
+      return {};
   }
 }
 
@@ -720,17 +717,17 @@ SemanticAnalyzer::Environment SemanticAnalyzer::defaultEnvironment() {
   // primitive types
   auto &typeMap = defaultEnv.m_typeMap;
 
-  typeMap["int"] = s_intType;
+  typeMap["int"]    = s_intType;
   typeMap["string"] = s_stringType;
 
   // standard library
   auto addStandardFunction =
-      [this, &defaultEnv](const std::string &name, const NamedType &resultType,
-                          const std::vector<NamedType> &paramTypes = {}) {
-        defaultEnv.m_valueMap[name] =
-            FunctionType{resultType, paramTypes, m_tempMap.namedLabel(name),
-                         m_translator.outermost()};
-      };
+    [this, &defaultEnv](const std::string &name, const NamedType &resultType,
+                        const std::vector<NamedType> &paramTypes = {}) {
+      defaultEnv.m_valueMap[name] =
+        FunctionType{resultType, paramTypes, m_tempMap.namedLabel(name),
+                     m_translator.outermost()};
+    };
 
   addStandardFunction("print", s_voidType, {s_stringType});
   addStandardFunction("flush", s_voidType);
@@ -748,7 +745,7 @@ SemanticAnalyzer::Environment SemanticAnalyzer::defaultEnvironment() {
 }
 
 SemanticAnalyzer::OptionalValue
-SemanticAnalyzer::findValue(const std::string &name) const {
+  SemanticAnalyzer::findValue(const std::string &name) const {
   for (auto it = m_environments.rbegin(); it != m_environments.rend(); ++it) {
     auto itt = it->m_valueMap.find(name);
     if (itt != it->m_valueMap.end()) {
@@ -760,10 +757,10 @@ SemanticAnalyzer::findValue(const std::string &name) const {
 }
 
 SemanticAnalyzer::OptionalType
-SemanticAnalyzer::findType(std::string name) const {
+  SemanticAnalyzer::findType(std::string name) const {
   for (auto it = m_environments.rbegin(); it != m_environments.rend(); ++it) {
     for (auto itt = it->m_typeMap.find(name); itt != it->m_typeMap.end();
-         itt = it->m_typeMap.find(name)) {
+         itt      = it->m_typeMap.find(name)) {
       auto res = &itt->second;
       // go through type names
       if (auto typeName = boost::get<NameType>(&res->m_type)) {

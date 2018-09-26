@@ -1,27 +1,25 @@
 #include "Program.h"
 #include "testsHelper.h"
 #define CATCH_CONFIG_MAIN
-#include <catch.hpp>
-#include <boost/variant/get.hpp>
 #include <boost/format.hpp>
+#include <boost/variant/get.hpp>
+#include <catch.hpp>
 
 using namespace tiger;
 using boost::get;
 
 TEST_CASE("compile test files") {
   namespace fs = boost::filesystem;
-  forEachTigerTest([](const fs::path &filepath, bool parseError, bool compilationError) {
-    auto filename = filepath.string();
-    CAPTURE(filename);
-    if (parseError || compilationError)
-    {
-      REQUIRE_FALSE(compileFile(filename));
-    }
-    else
-    {
-      REQUIRE(compileFile(filename));
-    }
-  });
+  forEachTigerTest(
+    [](const fs::path &filepath, bool parseError, bool compilationError) {
+      auto filename = filepath.string();
+      CAPTURE(filename);
+      if (parseError || compilationError) {
+        REQUIRE_FALSE(compileFile(filename));
+      } else {
+        REQUIRE(compileFile(filename));
+      }
+    });
 }
 
 TEST_CASE("lvalue") {
@@ -33,9 +31,7 @@ in
   i
 end
 )"));
-    SECTION("undefined") {
-      REQUIRE_FALSE(compile("i"));
-    }
+    SECTION("undefined") { REQUIRE_FALSE(compile("i")); }
   }
   SECTION("field") {
     REQUIRE(compile(R"(
@@ -99,25 +95,15 @@ end
   }
 }
 
-TEST_CASE("nil") {
-  REQUIRE(compile("nil"));
-}
+TEST_CASE("nil") { REQUIRE(compile("nil")); }
 
 TEST_CASE("sequence") {
-  SECTION("empty") {
-    REQUIRE(compile("()"));
-  }
-  SECTION("fails on a single expression") {
-    REQUIRE_FALSE(compile("(i)"));
-  }
-  SECTION("fails on second expression") {
-    REQUIRE_FALSE(compile("(0;j)"));
-  }
+  SECTION("empty") { REQUIRE(compile("()")); }
+  SECTION("fails on a single expression") { REQUIRE_FALSE(compile("(i)")); }
+  SECTION("fails on second expression") { REQUIRE_FALSE(compile("(0;j)")); }
 }
 
-TEST_CASE("integer") {
-  REQUIRE(compile("42"));
-}
+TEST_CASE("integer") { REQUIRE(compile("42")); }
 
 TEST_CASE("string") {
   auto program = R"("\tHello \"World\"!\n")";
@@ -184,7 +170,8 @@ end
 
 TEST_CASE("arithmetic comparison and boolean") {
   SECTION("integer") {
-    for (auto operation : { "+", "-", "*", "/", "=", "<>", ">", "<", "<=", ">=", "&", "|" }) {
+    for (auto operation :
+         {"+", "-", "*", "/", "=", "<>", ">", "<", "<=", ">=", "&", "|"}) {
       CAPTURE(operation);
       REQUIRE(compile(boost::str(boost::format(R"(
   let
@@ -196,7 +183,7 @@ TEST_CASE("arithmetic comparison and boolean") {
   }
 
   SECTION("string") {
-    for (auto operation : { "=", "<>", ">", "<", "<=", ">=" }) {
+    for (auto operation : {"=", "<>", ">", "<", "<=", ">="}) {
       CAPTURE(operation);
       REQUIRE(compile(boost::str(boost::format(R"(
   let
@@ -208,8 +195,7 @@ TEST_CASE("arithmetic comparison and boolean") {
   }
 
   SECTION("array and record") {
-    for (auto operation : { "=", "<>" })
-    {
+    for (auto operation : {"=", "<>"}) {
       CAPTURE(operation);
       REQUIRE(compile(boost::str(boost::format(R"(
 let
@@ -235,13 +221,13 @@ end
 
   SECTION("type mismatch") {
     SECTION("in expression") {
-      for (auto operation : { "+", "<>", "&" }) {
+      for (auto operation : {"+", "<>", "&"}) {
         CAPTURE(operation);
         REQUIRE_FALSE(compile("2<>\"3\""));
       }
     }
     SECTION("in result") {
-      for (auto operation : { "*", "<=", "|" }) {
+      for (auto operation : {"*", "<=", "|"}) {
         REQUIRE_FALSE(compile(boost::str(boost::format(R"(
   let
     var i : string := 2 %1% 3
@@ -274,13 +260,9 @@ end
 )"));
   }
 
-  SECTION("undeclared record type") {
-    REQUIRE_FALSE(compile("t{}"));
-  }
+  SECTION("undeclared record type") { REQUIRE_FALSE(compile("t{}")); }
 
-  SECTION("not a record type") {
-    REQUIRE_FALSE(compile("int{}"));
-  }
+  SECTION("not a record type") { REQUIRE_FALSE(compile("int{}")); }
 
   SECTION("undeclared field type") {
     REQUIRE_FALSE(compile(R"(
@@ -333,12 +315,10 @@ end
 )"));
   }
 
-  SECTION("undeclared array type") {
-    REQUIRE_FALSE(compile(R"(t[2] of 3)"));
-  }
+  SECTION("undeclared array type") { REQUIRE_FALSE(compile(R"(t[2] of 3)")); }
 
   SECTION("undeclared element type")
-    REQUIRE_FALSE(compile(R"(
+  REQUIRE_FALSE(compile(R"(
 let
   type t = array of tt
 in
@@ -793,8 +773,7 @@ end
   }
 }
 
-TEST_CASE("standard library")
-{
+TEST_CASE("standard library") {
   // function print(s : string)
   REQUIRE(compile(R"(
 print("")

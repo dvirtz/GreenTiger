@@ -12,16 +12,16 @@
 namespace tiger {
 
 namespace spirit = boost::spirit;
-namespace qi = spirit::qi;
+namespace qi     = spirit::qi;
 
 namespace detail {
 
 template <typename Iterator>
 CompileResult compile(Iterator &first, const Iterator &last) {
-  using Grammer = ExpressionParser<Iterator>;
-  using Skipper = Skipper<Iterator>;
+  using Grammer      = ExpressionParser<Iterator>;
+  using Skipper      = Skipper<Iterator>;
   using ErrorHandler = ErrorHandler<Iterator>;
-  using Annotation = Annotation<Iterator>;
+  using Annotation   = Annotation<Iterator>;
 
   ErrorHandler errorHandler;
   Annotation annotation;
@@ -38,7 +38,6 @@ CompileResult compile(Iterator &first, const Iterator &last) {
   ast::Expression ast;
 
   try {
-
     if (qi::phrase_parse(first, last, grammer, skipper, ast) && first == last) {
       simplifyTree(ast);
 #ifdef BOOST_SPIRIT_DEBUG
@@ -48,15 +47,14 @@ CompileResult compile(Iterator &first, const Iterator &last) {
 #endif
 
       escapeAnalyser.analyse(ast);
-      auto compiled = semanticAnalyzer.compile(ast);
+      auto compiled  = semanticAnalyzer.compile(ast);
       auto fragments = translator.result();
-      return canonicalizer.canonicalize(std::move(compiled), std::move(fragments));
+      return canonicalizer.canonicalize(std::move(compiled),
+                                        std::move(fragments));
     }
 
     errorHandler("Parsing failed", "", first);
-  } catch (const std::exception &e) {
-    std::cerr << e.what();
-  }
+  } catch (const std::exception &e) { std::cerr << e.what(); }
   return {};
 }
 } // namespace detail
@@ -68,9 +66,9 @@ CompileResult compileFile(const std::string &filename) {
     return {};
   }
 
-  using FileIterator = std::istreambuf_iterator<char>;
+  using FileIterator    = std::istreambuf_iterator<char>;
   using ForwardIterator = spirit::multi_pass<FileIterator>;
-  using Iterator = spirit::classic::position_iterator2<ForwardIterator>;
+  using Iterator        = spirit::classic::position_iterator2<ForwardIterator>;
 
   Iterator first{ForwardIterator(FileIterator(inputFile)), ForwardIterator(),
                  filename};
@@ -81,7 +79,7 @@ CompileResult compileFile(const std::string &filename) {
 
 CompileResult compile(const std::string &string) {
   using ForwardIterator = std::string::const_iterator;
-  using Iterator = spirit::classic::position_iterator2<ForwardIterator>;
+  using Iterator        = spirit::classic::position_iterator2<ForwardIterator>;
 
   Iterator first{ForwardIterator(string.begin()), ForwardIterator(string.end()),
                  "STRING"};
@@ -91,8 +89,8 @@ CompileResult compile(const std::string &string) {
 }
 
 std::ostream &
-operator<<(std::ostream &ost,
-           std::pair<ir::Expression, FragmentList> const &compileResult) {
+  operator<<(std::ostream &ost,
+             std::pair<ir::Expression, FragmentList> const &compileResult) {
   return ost << compileResult.first;
 }
 

@@ -31,7 +31,7 @@ public:
   friend std::ostream &operator<<(std::ostream &ost, const Map &map);
 
   Label newLabel();
-  Label namedLabel(const std::string& name);
+  Label namedLabel(const std::string &name);
 
 private:
   std::unordered_map<Register, std::string> m_map;

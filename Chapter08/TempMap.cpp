@@ -34,7 +34,7 @@ void Map::layerOver(Map &&under) {
 }
 
 Register Map::newTemp() {
-  Register res{ m_nextTemp };
+  Register res{m_nextTemp};
   m_map[res] = std::to_string(m_nextTemp++);
   return res;
 }
@@ -50,14 +50,11 @@ boost::optional<std::string> Map::lookup(const Register &t) {
 
 Label Map::newLabel() {
   static const auto MIN_LABEL = 0;
-  static auto labels = MIN_LABEL;
-  return Label{ "L" + std::to_string(labels++) };
+  static auto labels          = MIN_LABEL;
+  return Label{"L" + std::to_string(labels++)};
 }
 
-Label Map::namedLabel(const std::string& name)
-{
-  return Label{ name };
-}
+Label Map::namedLabel(const std::string &name) { return Label{name}; }
 
 } // namespace temp
 } // namespace tiger

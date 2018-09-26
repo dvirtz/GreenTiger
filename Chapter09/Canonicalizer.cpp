@@ -7,27 +7,25 @@ namespace tiger {
 
 using helpers::match;
 
-Canonicalizer::Canonicalizer(temp::Map &tempMap)
-    : m_tempMap{tempMap} {}
+Canonicalizer::Canonicalizer(temp::Map &tempMap) : m_tempMap{tempMap} {}
 
-ir::Statements
-Canonicalizer::canonicalize(ir::Statement &&statement) {
+ir::Statements Canonicalizer::canonicalize(ir::Statement &&statement) {
   // add jump to end
   auto end = m_tempMap.newLabel();
-  ir::Sequence seq{ {std::move(statement), ir::Jump{end}} };
+  ir::Sequence seq{{std::move(statement), ir::Jump{end}}};
   auto res = traceSchedule(makeBasicBlocks(linearize(std::move(seq))));
   res.emplace_back(end);
   return res;
 }
 
 tiger::ir::Statements
-Canonicalizer::linearize(ir::Statement &&statement) const {
+  Canonicalizer::linearize(ir::Statement &&statement) const {
   auto reordered = reorderStatement(statement);
   return linearizeHelper(reordered);
 }
 
 Canonicalizer::BasicBlocks
-Canonicalizer::makeBasicBlocks(ir::Statements &&statements) const {
+  Canonicalizer::makeBasicBlocks(ir::Statements &&statements) const {
   //   The sequence is scanned from beginning to end; whenever
   //   a LABEL is found, a new block is started(and the previous block is
   //   ended); Whenever a JUMP or CJUMP is found, a block is ended(and the next
@@ -48,12 +46,12 @@ Canonicalizer::makeBasicBlocks(ir::Statements &&statements) const {
     newBlock.reserve(std::distance(from, to) + 1);
     // make sure block begins with a label
     match(statements.front())(
-        [](temp::Label &/* label */) {
-          // block already starts with a label
-        },
-        [&newBlock, this](auto & /*default*/) {
-          newBlock.emplace_back(m_tempMap.newLabel());
-        });
+      [](temp::Label & /* label */) {
+        // block already starts with a label
+      },
+      [&newBlock, this](auto & /*default*/) {
+        newBlock.emplace_back(m_tempMap.newLabel());
+      });
     std::move(from, to, std::back_inserter(newBlock));
     // make sure block ends with a jump
     match(newBlock.back())([](const ir::Jump &) {},
@@ -68,10 +66,12 @@ Canonicalizer::makeBasicBlocks(ir::Statements &&statements) const {
 
   for (auto it = statements.begin(); it != statements.end();) {
     match (*it)(
-        [&](temp::Label &/* label */) { it = insertNewBlock(it); },
-        [&](ir::Jump &/* jump */) { it = insertNewBlock(std::next(it)); },
-        [&](ir::ConditionalJump &/* jump */) { it = insertNewBlock(std::next(it)); },
-        [&](auto & /*default*/) { ++it; });
+      [&](temp::Label & /* label */) { it = insertNewBlock(it); },
+      [&](ir::Jump & /* jump */) { it = insertNewBlock(std::next(it)); },
+      [&](ir::ConditionalJump & /* jump */) {
+        it = insertNewBlock(std::next(it));
+      },
+      [&](auto & /*default*/) { ++it; });
   }
 
   // the last statement was a jump to end
@@ -95,11 +95,11 @@ ir::Statements Canonicalizer::traceSchedule(BasicBlocks &&blocks) const {
 
       // find block which starts with label
       return std::find_if(
-          blocks.begin(), blocks.end(), [&pLabel](const ir::Statements &b) {
-            return match(b.front())(
-                [&pLabel](const temp::Label &l) { return l == *pLabel; },
-                [](const auto & /*default*/) { return false; });
-          });
+        blocks.begin(), blocks.end(), [&pLabel](const ir::Statements &b) {
+          return match(b.front())(
+            [&pLabel](const temp::Label &l) { return l == *pLabel; },
+            [](const auto & /*default*/) { return false; });
+        });
     };
 
     for (auto it = blocks.begin(); it != blocks.end();) {
@@ -107,45 +107,45 @@ ir::Statements Canonicalizer::traceSchedule(BasicBlocks &&blocks) const {
       it = addToTrace(it);
 
       match(res.back())(
-          [&](ir::Jump &jump) {
-            it = findSuccessor(&jump.jumps.front());
+        [&](ir::Jump &jump) {
+          it = findSuccessor(&jump.jumps.front());
+          if (it != blocks.end()) {
+            // if this is the only successor, remove the jump and merge the
+            // two blocks
+            if (jump.jumps.size() == 1) {
+              res.pop_back();
+            }
+          };
+        },
+        [&](ir::ConditionalJump &cJump) {
+          it = findSuccessor(cJump.falseDest);
+          if (it == blocks.end()) {
+            // Any CJUMP immediately followed by its false label we let alone
+            it = findSuccessor(cJump.trueDest);
             if (it != blocks.end()) {
-              // if this is the only successor, remove the jump and merge the
-              // two blocks
-              if (jump.jumps.size() == 1) {
-                res.pop_back();
-              }
-            };
-          },
-          [&](ir::ConditionalJump &cJump) {
-            it = findSuccessor(cJump.falseDest);
-            if (it == blocks.end()) {
-              // Any CJUMP immediately followed by its false label we let alone
-              it = findSuccessor(cJump.trueDest);
-              if (it != blocks.end()) {
-                // For any CJUMP followed by its true label, we switch the true
-                // and false labels and negate the condition
-                cJump.op = ir::notRel(cJump.op);
-                std::swap(cJump.falseDest, cJump.trueDest);
-              } else {
-                // For any CJUMP(cond, a, b, t, f) followed by neither label, we
-                // invent a new false label f' and rewrite the single CJUMP
-                // statement as three statements, just to achieve the condition
-                // that the CJUMP is followed by its false label
-                // CJUMP(cond, a, b, t, f') LABEL f' JUMP(NAME f)
-                auto newLabel =
-                    std::make_shared<temp::Label>(m_tempMap.newLabel());
-                newLabel.swap(cJump.falseDest);
-                res.emplace_back(*cJump.falseDest);
-                if (newLabel) {
-                  res.emplace_back(ir::Jump(*newLabel));
-                }
+              // For any CJUMP followed by its true label, we switch the true
+              // and false labels and negate the condition
+              cJump.op = ir::notRel(cJump.op);
+              std::swap(cJump.falseDest, cJump.trueDest);
+            } else {
+              // For any CJUMP(cond, a, b, t, f) followed by neither label, we
+              // invent a new false label f' and rewrite the single CJUMP
+              // statement as three statements, just to achieve the condition
+              // that the CJUMP is followed by its false label
+              // CJUMP(cond, a, b, t, f') LABEL f' JUMP(NAME f)
+              auto newLabel =
+                std::make_shared<temp::Label>(m_tempMap.newLabel());
+              newLabel.swap(cJump.falseDest);
+              res.emplace_back(*cJump.falseDest);
+              if (newLabel) {
+                res.emplace_back(ir::Jump(*newLabel));
               }
             }
-          },
-          [](auto & /*default*/) {
-            assert(false && "basic block should end with a jump");
-          });
+          }
+        },
+        [](auto & /*default*/) {
+          assert(false && "basic block should end with a jump");
+        });
     }
   }
 
@@ -159,7 +159,7 @@ bool Canonicalizer::commutes(const ir::Statement &stm,
 
 template <typename T, typename... Ts>
 std::enable_if_t<!helpers::is_iterator<T>::value, ir::Statement>
-Canonicalizer::reorder(T &t, Ts &... ts) const {
+  Canonicalizer::reorder(T &t, Ts &... ts) const {
   std::initializer_list<std::reference_wrapper<ir::Expression>> list{t, ts...};
   return reorder(list.begin(), list.end());
 }
@@ -172,114 +172,113 @@ ir::Statement Canonicalizer::reorder(Iterator first, Iterator last) const {
 
   ir::Expression &exp = *first;
   return match(exp)(
-      [&](ir::Call &call) {
-        // move call result to a temporary, so that RV register can be reused
-        // later
+    [&](ir::Call &call) {
+      // move call result to a temporary, so that RV register can be reused
+      // later
+      auto t = m_tempMap.newTemp();
+      exp    = ir::ExpressionSequence{ir::Move{t, call}, t};
+      return reorder(first, last);
+    },
+    [&](auto & /*default*/) -> ir::Statement {
+      auto reorderedExpression = this->reorderExpression(exp);
+      auto reorderedTail       = this->reorder(std::next(first), last);
+      if (this->commutes(reorderedTail, reorderedExpression.m_exp)) {
+        // swap location of reorderedTail and reorderedExpression.second
+        exp = reorderedExpression.m_exp;
+        return this->sequence(reorderedExpression.m_stm, reorderedTail);
+      } else {
+        // move reorderedExpression.second to a temporary and replace exp with
+        // it
         auto t = m_tempMap.newTemp();
-        exp = ir::ExpressionSequence{ir::Move{t, call}, t};
-        return reorder(first, last);
-      },
-      [&](auto & /*default*/) -> ir::Statement {
-        auto reorderedExpression = this->reorderExpression(exp);
-        auto reorderedTail = this->reorder(std::next(first), last);
-        if (this->commutes(reorderedTail, reorderedExpression.m_exp)) {
-          // swap location of reorderedTail and reorderedExpression.second
-          exp = reorderedExpression.m_exp;
-          return this->sequence(reorderedExpression.m_stm, reorderedTail);
-        } else {
-          // move reorderedExpression.second to a temporary and replace exp with
-          // it
-          auto t = m_tempMap.newTemp();
-          exp = t;
-          return this->sequence(reorderedExpression.m_stm,
-                                ir::Move{t, reorderedExpression.m_exp},
-                                reorderedTail);
-        }
-      });
+        exp    = t;
+        return this->sequence(reorderedExpression.m_stm,
+                              ir::Move{t, reorderedExpression.m_exp},
+                              reorderedTail);
+      }
+    });
 }
 
 ir::Statement Canonicalizer::reorderStatement(ir::Statement &stm) const {
   return match(stm)(
-      [this](ir::Sequence &sequence) {
-        ir::Statements recurse;
-        recurse.reserve(sequence.statements.size());
-        std::transform(sequence.statements.begin(), sequence.statements.end(),
-                       std::back_inserter(recurse), [this](ir::Statement &stm) {
-                         return reorderStatement(stm);
-                       });
-        return this->sequence(recurse);
-      },
-      [this, &stm](ir::Jump &jump) { return sequence(reorder(jump.exp), stm); },
-      [this, &stm](ir::ConditionalJump &conditionalJump)->ir::Statement {
-        // ignore unused branches
-        if (conditionalJump.trueDest->get().empty()) {
-          assert(conditionalJump.falseDest->get().empty() && "both destinations should be empty or full");
-          return ir::Sequence{};
-        }
+    [this](ir::Sequence &sequence) {
+      ir::Statements recurse;
+      recurse.reserve(sequence.statements.size());
+      std::transform(sequence.statements.begin(), sequence.statements.end(),
+                     std::back_inserter(recurse), [this](ir::Statement &stm) {
+                       return reorderStatement(stm);
+                     });
+      return this->sequence(recurse);
+    },
+    [this, &stm](ir::Jump &jump) { return sequence(reorder(jump.exp), stm); },
+    [this, &stm](ir::ConditionalJump &conditionalJump) -> ir::Statement {
+      // ignore unused branches
+      if (conditionalJump.trueDest->get().empty()) {
+        assert(conditionalJump.falseDest->get().empty()
+               && "both destinations should be empty or full");
+        return ir::Sequence{};
+      }
 
-        return sequence(reorder(conditionalJump.left, conditionalJump.right),
-                        stm);
-      },
-      [this, &stm](ir::Move &move) {
-        return match(move.dst)(
-            [this, &move, &stm](temp::Register &/* t */) {
-              return match(move.src)(
-                  [this, &stm](ir::Call &call) {
-                    return sequence(reorder(call.args.begin(), call.args.end()),
-                                    stm);
-                  },
-                  [this, &move, &stm](auto & /*default*/) {
-                    return this->sequence(this->reorder(move.src), stm);
-                  });
-            },
-            [this, &stm, &move](ir::MemoryAccess &memoryAccess) {
-              return sequence(reorder(memoryAccess.address, move.src), stm);
-            },
-            [this, &stm, &move](ir::ExpressionSequence &eSeq) {
-              auto s = eSeq.stm;
-              move.dst = eSeq.exp;
-              ir::Statement seq{sequence(s, stm)};
-              return reorderStatement(seq);
-            },
-            [](auto & /*default*/) {
-              assert(false && "dst should be temp or mem only");
-              return ir::Statement{};
-            });
-      },
-      [this, &stm](ir::ExpressionStatement &expressionStatement) {
-        return match(expressionStatement.exp)(
+      return sequence(reorder(conditionalJump.left, conditionalJump.right),
+                      stm);
+    },
+    [this, &stm](ir::Move &move) {
+      return match(move.dst)(
+        [this, &move, &stm](temp::Register & /* t */) {
+          return match(move.src)(
             [this, &stm](ir::Call &call) {
               return sequence(reorder(call.args.begin(), call.args.end()), stm);
             },
-            [this, &stm, &expressionStatement](auto & /*default*/) {
-              return this->sequence(this->reorder(expressionStatement.exp),
-                                    stm);
+            [this, &move, &stm](auto & /*default*/) {
+              return this->sequence(this->reorder(move.src), stm);
             });
-      },
-      [&stm](auto & /*default*/) { return stm; });
+        },
+        [this, &stm, &move](ir::MemoryAccess &memoryAccess) {
+          return sequence(reorder(memoryAccess.address, move.src), stm);
+        },
+        [this, &stm, &move](ir::ExpressionSequence &eSeq) {
+          auto s   = eSeq.stm;
+          move.dst = eSeq.exp;
+          ir::Statement seq{sequence(s, stm)};
+          return reorderStatement(seq);
+        },
+        [](auto & /*default*/) {
+          assert(false && "dst should be temp or mem only");
+          return ir::Statement{};
+        });
+    },
+    [this, &stm](ir::ExpressionStatement &expressionStatement) {
+      return match(expressionStatement.exp)(
+        [this, &stm](ir::Call &call) {
+          return sequence(reorder(call.args.begin(), call.args.end()), stm);
+        },
+        [this, &stm, &expressionStatement](auto & /*default*/) {
+          return this->sequence(this->reorder(expressionStatement.exp), stm);
+        });
+    },
+    [&stm](auto & /*default*/) { return stm; });
 }
 
 Canonicalizer::Reordered
-Canonicalizer::reorderExpression(ir::Expression &exp) const {
+  Canonicalizer::reorderExpression(ir::Expression &exp) const {
   return match(exp)(
-      [this, &exp](ir::BinaryOperation &binOperation) {
-        return Reordered{reorder(binOperation.left, binOperation.right), exp};
-      },
-      [this, &exp](ir::MemoryAccess &memAccess) {
-        return Reordered{reorder(memAccess.address), exp};
-      },
-      [this](ir::ExpressionSequence &expSequence) {
-        auto recurse = reorderExpression(expSequence.exp);
-        return Reordered{
-            sequence(reorderStatement(expSequence.stm), recurse.m_stm),
-            recurse.m_exp};
-      },
-      [this, &exp](ir::Call &call) {
-        return Reordered{reorder(call.args.begin(), call.args.end()), exp};
-      },
-      [&exp](auto & /*default*/) {
-        return Reordered{ir::Statement{}, exp};
-      });
+    [this, &exp](ir::BinaryOperation &binOperation) {
+      return Reordered{reorder(binOperation.left, binOperation.right), exp};
+    },
+    [this, &exp](ir::MemoryAccess &memAccess) {
+      return Reordered{reorder(memAccess.address), exp};
+    },
+    [this](ir::ExpressionSequence &expSequence) {
+      auto recurse = reorderExpression(expSequence.exp);
+      return Reordered{
+        sequence(reorderStatement(expSequence.stm), recurse.m_stm),
+        recurse.m_exp};
+    },
+    [this, &exp](ir::Call &call) {
+      return Reordered{reorder(call.args.begin(), call.args.end()), exp};
+    },
+    [&exp](auto & /*default*/) {
+      return Reordered{ir::Statement{}, exp};
+    });
 }
 
 bool Canonicalizer::isConst(const ir::Expression &expression) const {
@@ -297,11 +296,11 @@ bool Canonicalizer::hasNoSideEffects(const ir::Expression &expression) const {
 
 bool Canonicalizer::isNop(const ir::Statement &stm) const {
   return match(stm)(
-      [this](const ir::ExpressionStatement &expStatement) {
-        return hasNoSideEffects(expStatement.exp);
-      },
-      [](const ir::Sequence &sequence) { return sequence.statements.empty(); },
-      [](const auto & /*default*/) { return false; });
+    [this](const ir::ExpressionStatement &expStatement) {
+      return hasNoSideEffects(expStatement.exp);
+    },
+    [](const ir::Sequence &sequence) { return sequence.statements.empty(); },
+    [](const auto & /*default*/) { return false; });
 }
 
 template <typename Sequence, typename>
@@ -316,22 +315,22 @@ ir::Statement Canonicalizer::sequence(const Sequence &statements) const {
 
 template <typename Statement, typename... Statements>
 std::enable_if_t<!helpers::is_sequence<Statement>::value, ir::Statement>
-Canonicalizer::sequence(const Statement &statement,
-                        const Statements &... statements) const {
+  Canonicalizer::sequence(const Statement &statement,
+                          const Statements &... statements) const {
   return sequence(std::initializer_list<Statement>{statement, statements...});
 }
 
 ir::Statements Canonicalizer::linearizeHelper(ir::Statement &statement) const {
   return match(statement)(
-      [this](ir::Sequence &sequence) {
-        return std::accumulate(
-            sequence.statements.begin(), sequence.statements.end(),
-            ir::Statements{},
-            [this](const ir::Statements &current, ir::Statement &next) {
-              return concatenate(current, linearizeHelper(next));
-            });
-      },
-      [](auto &stm) { return ir::Statements{stm}; });
+    [this](ir::Sequence &sequence) {
+      return std::accumulate(
+        sequence.statements.begin(), sequence.statements.end(),
+        ir::Statements{},
+        [this](const ir::Statements &current, ir::Statement &next) {
+          return concatenate(current, linearizeHelper(next));
+        });
+    },
+    [](auto &stm) { return ir::Statements{stm}; });
 }
 
 ir::Statements Canonicalizer::concatenate(const ir::Statements &left,
