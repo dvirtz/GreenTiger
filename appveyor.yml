@@ -57,4 +57,4 @@ install:
   - cmd: set VS150COMNTOOLS=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools
 
 build_script:
-  - "build.py --toolchain ${TOOLCHAIN} --config Release --verbose --fwd POST_BUILD_TESTS=FALSE --test"
+  - cmd: python %POLLY_ROOT%\bin\build.py --config Release --toolchain "%TOOLCHAIN%" --fwd POST_BUILD_TESTS=FALSE --test

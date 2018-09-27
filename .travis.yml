@@ -7,6 +7,14 @@ cache:
     - $HOME/.local
     - $HOME/.hunter
     
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - python3-pip
+      - g++-7
+
 matrix:
   include:
     # Linux {
@@ -86,4 +94,8 @@ install:
   - export PATH="`pwd`/_ci/cmake/bin:${PATH}"
 
 script:
+<<<<<<< HEAD
   - "build.py --toolchain ${TOOLCHAIN} --config Release --verbose --fwd POST_BUILD_TESTS=FALSE --test"
+=======
+  - "build.py --toolchain ${TOOLCHAIN} --config Release --fwd POST_BUILD_TESTS=FALSE --test"
+>>>>>>> 32fa299... copy CI scripts from Hunter
