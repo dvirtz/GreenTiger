@@ -1,27 +1,60 @@
-image: Visual Studio 2017
 
-platform: 
-  - Win32
-  - x64 
-  
-environment:
-  matrix:
-    - TOOLSET: v140
-    - TOOLSET: v141
-    
-configuration:
-  - Release
-  
 cache:
   C:/.hunter
-  
-before_build:
-  - if "%platform%"=="Win32" set CMAKE_GENERATOR_NAME=Visual Studio 15 2017
-  - if "%platform%"=="x64"   set CMAKE_GENERATOR_NAME=Visual Studio 15 2017 Win64
-  - cmake . -B_build -G "%CMAKE_GENERATOR_NAME%" -T %TOOLSET% -DPOST_BUILD_TESTS=OFF
+
+environment:
+  matrix:
+
+    - TOOLCHAIN: "ninja-vs-15-2017-win64-cxx17"
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+
+    - TOOLCHAIN: "nmake-vs-15-2017-win64-cxx17"
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+
+    - TOOLCHAIN: "vs-15-2017-win64-cxx17"
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+
+    - TOOLCHAIN: "vs-14-2015-sdk-8-1"
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+
+    - TOOLCHAIN: "mingw-cxx17"
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+
+    - TOOLCHAIN: "msys-cxx17"
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+
+install:
+  # Python 3
+  - cmd: set PATH=C:\Python34-x64;C:\Python34-x64\Scripts;%PATH%
+
+  # Install Python package 'requests', 'gitpython'
+  - cmd: pip install requests
+  - cmd: pip install gitpython
+
+  # Install latest Polly toolchains and scripts
+  - cmd: appveyor DownloadFile https://github.com/ruslo/polly/archive/master.zip
+  - cmd: 7z x master.zip
+  - cmd: set POLLY_ROOT=%cd%\polly-master
+
+  # Install dependencies (CMake, Ninja)
+  - cmd: python %POLLY_ROOT%\bin\install-ci-dependencies.py
+
+  # Tune locations
+  - cmd: set PATH=%cd%\_ci\cmake\bin;%PATH%
+  - cmd: set PATH=%cd%\_ci\ninja;%PATH%
+
+  # Remove entry with sh.exe from PATH to fix error with MinGW toolchain
+  # (For MinGW make to work correctly sh.exe must NOT be in your path)
+  # * http://stackoverflow.com/a/3870338/2288008
+  - cmd: set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
+
+  - cmd: set MINGW_PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin
+
+  # MSYS2 location
+  - cmd: set MSYS_PATH=C:\msys64\usr\bin
+
+  # Visual Studio 15 2017: Mimic behavior of older versions
+  - cmd: set VS150COMNTOOLS=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools
 
 build_script:
-  - cmake --build _build --config %configuration%
-
-test_script:
-  - cmake --build _build --config %configuration% --target RUN_TESTS
+  - "build.py --toolchain ${TOOLCHAIN} --config Release --verbose --fwd POST_BUILD_TESTS=FALSE --test"
