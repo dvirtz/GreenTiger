@@ -6,7 +6,7 @@ cache:
   directories:
     - $HOME/.local
     - $HOME/.hunter
-    
+
 addons:
   apt:
     sources:
@@ -14,7 +14,7 @@ addons:
     packages:
       - python3-pip
       - g++-7
-
+      
 matrix:
   include:
     # Linux {
@@ -27,30 +27,30 @@ matrix:
       env: >
         TOOLCHAIN=gcc-7-cxx17
         
-    - os: linux
-      env: >
-        TOOLCHAIN=analyze-cxx17
+    # - os: linux
+    #   env: >
+    #     TOOLCHAIN=analyze-cxx17
         
-    - os: linux
-      env: >
-        TOOLCHAIN=sanitize-address-cxx17
+    # - os: linux
+    #   env: >
+    #     TOOLCHAIN=sanitize-address-cxx17
         
-    - os: linux
-      env: >
-        TOOLCHAIN=sanitize-leak-cxx17
+    # - os: linux
+    #   env: >
+    #     TOOLCHAIN=sanitize-leak-cxx17
         
-    - os: linux
-      env: >
-        TOOLCHAIN=sanitize-thread-cxx17
+    # - os: linux
+    #   env: >
+    #     TOOLCHAIN=sanitize-thread-cxx17
         
     # }
 
     # OSX {
 
-    - os: osx
-      osx_image: xcode9.4
-      env: >
-        TOOLCHAIN=osx-10-13-make-cxx14
+    # - os: osx
+    #   osx_image: xcode9.4
+    #   env: >
+    #     TOOLCHAIN=osx-10-13-make-cxx14
         
     - os: osx
       osx_image: xcode9.4
@@ -94,8 +94,4 @@ install:
   - export PATH="`pwd`/_ci/cmake/bin:${PATH}"
 
 script:
-<<<<<<< HEAD
-  - "build.py --toolchain ${TOOLCHAIN} --config Release --verbose --fwd POST_BUILD_TESTS=FALSE --test"
-=======
   - "build.py --toolchain ${TOOLCHAIN} --config Release --fwd POST_BUILD_TESTS=FALSE --test"
->>>>>>> 32fa299... copy CI scripts from Hunter
