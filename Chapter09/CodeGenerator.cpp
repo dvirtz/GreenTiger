@@ -287,6 +287,7 @@ bool DagMatcher::match(const ir::ConditionalJump &code,
                        const ir::ConditionalJump &pattern,
                        MatchData &matchData) const {
   matchData.m_labels.push_back(*code.trueDest);
+  matchData.m_labels.push_back(*code.falseDest);
   return match(code.op, pattern.op, matchData)
          && match(code.left, pattern.left, matchData)
          && match(code.right, pattern.right, matchData);

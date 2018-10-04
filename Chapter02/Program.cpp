@@ -87,6 +87,7 @@ public:
                                  auto &matched, auto & /* id */,
                                  auto & /* ctx */) {
       assert(m_commentCount == 0);
+      (void)(m_commentCount);
       matched = lex::pass_flags::pass_fail;
     };
 

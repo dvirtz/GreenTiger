@@ -41,7 +41,6 @@ struct Move {
 struct Instruction : public boost::variant<Operation, Label, Move> {
   using base = boost::variant<Operation, Label, Move>;
   using base::base;
-  using base::operator=;
 
   void print(std::ostream &out, const temp::Map &tempMap) const;
 };

@@ -31,8 +31,14 @@ assembly::Instructions
   auto calleeSaved = calleeSavedRegisters();
   auto liveAtExit  = rv::concat(calleeSaved, rv::single(returnValue()),
                                rv::single(stackPointer()));
+#ifdef _MSC_VER
+  auto res = body;
+  res.push_back(assembly::Operation{{}, {}, liveAtExit});
+  return res;
+#else
   return ranges::view::concat(
     body, rv::single(assembly::Operation{{}, {}, liveAtExit}));
+#endif
 }
 
 } // namespace frame
