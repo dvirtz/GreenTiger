@@ -11,7 +11,7 @@ environment:
     # - TOOLCHAIN: "nmake-vs-15-2017-win64-cxx17"
     #   APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
 
-    - TOOLCHAIN: "vs-15-2017-win64-cxx17"
+    - TOOLCHAIN: "vs-15-2017-win64-cxx17-hostX64"
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
 
     # - TOOLCHAIN: "vs-14-2015-sdk-8-1"
@@ -32,9 +32,9 @@ install:
   - cmd: pip install gitpython
 
   # Install latest Polly toolchains and scripts
-  - cmd: appveyor DownloadFile https://github.com/ruslo/polly/archive/master.zip
-  - cmd: 7z x master.zip
-  - cmd: set POLLY_ROOT=%cd%\polly-master
+  - cmd: appveyor DownloadFile https://github.com/dvirtz/polly/archive/hostX64.zip
+  - cmd: 7z x hostX64.zip
+  - cmd: set POLLY_ROOT=%cd%\polly-hostX64
 
   # Install dependencies (CMake, Ninja)
   - cmd: python %POLLY_ROOT%\bin\install-ci-dependencies.py
