@@ -2,6 +2,7 @@ add_library(testMain STATIC Test.h TestMain.cpp)
 target_link_libraries(testMain PUBLIC 
   Catch2::Catch
   Microsoft.GSL::GSL
+  Boost::filesystem
   Boost::system 
   includeHeaders
   Chapter09
@@ -38,8 +39,3 @@ add_chapter09_test(record)
 add_chapter09_test(sequence)
 add_chapter09_test(functionDeclarations)
 add_chapter09_test(break)
-
-target_link_libraries(compileFiles 
-  PRIVATE
-    Boost::filesystem
-)
