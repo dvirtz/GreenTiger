@@ -94,4 +94,4 @@ install:
   - export PATH="`pwd`/_ci/cmake/bin:${PATH}"
 
 script:
-  - "build.py --toolchain ${TOOLCHAIN} --config Release --fwd POST_BUILD_TESTS=FALSE --test"
+  - build.py --toolchain ${TOOLCHAIN} --config Release --fwd POST_BUILD_TESTS=FALSE --test
