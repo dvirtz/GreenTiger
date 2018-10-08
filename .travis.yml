@@ -21,11 +21,11 @@ matrix:
 
     - os: linux
       env: >
-        TOOLCHAIN=clang-cxx17
+        TOOLCHAIN=ninja-clang-cxx17
         
     - os: linux
       env: >
-        TOOLCHAIN=gcc-7-cxx17
+        TOOLCHAIN=ninja-gcc-7-cxx17
         
     # - os: linux
     #   env: >
@@ -82,16 +82,16 @@ install:
   - if [[ "`uname`" == "Linux" ]]; then travis_retry pip3 install --user gitpython; fi
 
   # Install latest Polly toolchains and scripts
-  - wget https://github.com/ruslo/polly/archive/master.zip
-  - unzip master.zip
-  - POLLY_ROOT="`pwd`/polly-master"
+  - wget https://github.com/dvirtz/polly/archive/ninja-toolchains.zip
+  - unzip ninja-toolchains.zip
+  - POLLY_ROOT="`pwd`/polly-ninja-toolchains"
   - export PATH="${POLLY_ROOT}/bin:${PATH}"
 
   # Install dependencies (CMake, Android NDK)
   - install-ci-dependencies.py --prune-archives
 
   # Tune locations
-  - export PATH="`pwd`/_ci/cmake/bin:${PATH}"
+  - export PATH="`pwd`/_ci/cmake/bin:`pwd`/_ci/ninja_dir:${PATH}"
 
 script:
-  - build.py --toolchain ${TOOLCHAIN} --config Release --fwd POST_BUILD_TESTS=FALSE --test
+  - build.py --toolchain ${TOOLCHAIN} --config Release --fwd POST_BUILD_TESTS=FALSE --jobs 1 --test
