@@ -18,7 +18,7 @@ namespace temp = tiger::temp;
 using OptReg   = boost::optional<temp::Register>;
 using OptLabel = boost::optional<temp::Label>;
 
-struct error_handler {
+struct ErrorHandler {
   template <typename Iterator, typename Exception, typename Context>
   x3::error_handler_result
     on_error(Iterator & /* first */, Iterator const & /* last */,
@@ -84,41 +84,40 @@ inline auto branchToEnd(OptLabel &label) {
   return r;
 }
 
-template <typename CheckMain, typename CheckStrings = x3::eps_parser,
-          typename CheckFunctions = x3::eps_parser>
-inline void checkProgram(const std::string &program, const CheckMain &checkMain,
-                         const CheckStrings &checkStrings     = x3::eps,
-                         const CheckFunctions &checkFunctions = x3::eps,
-                         bool checkBranchToEnd                = true) {
+template <typename... Expressions>
+inline void checkProgram(const std::string &program,
+                         const Expressions &... expressions) {
   CAPTURE(program);
   auto iter = program.begin();
   auto end  = program.end();
 
-  // Our error handler
-  struct checker_class : error_handler {};
-  OptLabel endLabel;
-  auto branchToEndChecker = x3::rule<struct branch_to_end_checker>{} =
-    x3::eps(!checkBranchToEnd) | branchToEnd(endLabel);
-
-  auto const checker = x3::rule<checker_class>{"checker"} =
-    checkStrings > checkFunctions > "main:" > checkMain > branchToEndChecker;
-
   std::stringstream sst;
-  x3::error_handler<std::decay_t<decltype(iter)>> error_handler(iter, end, sst);
+  using Iterator = std::decay_t<decltype(iter)>;
+  x3::error_handler<Iterator> error_handler(iter, end, sst);
 
-  auto context = x3::make_context<x3::error_handler_tag>(
-    error_handler, x3::make_context<x3::skipper_tag>(x3::as_parser(x3::space)));
+  auto parseExpression = [&](Iterator &start, Iterator &end,
+                             const auto &expression) {
+    auto r = x3::rule<ErrorHandler>{"with_error_handler"} = expression;
+    auto const parser =
+      x3::with<x3::error_handler_tag>(std::ref(error_handler))[r];
+    auto parsed = x3::phrase_parse(start, end, parser, x3::space);
+    if (!parsed) {
+      FAIL(sst.str());
+    }
+  };
 
-  auto parsed = checker.parse(iter, end, context, x3::unused, x3::unused);
-  x3::skip_over(iter, end, context);
+  // parse all expressions
+  (void)std::initializer_list<int>{(parseExpression(iter, end, expressions), 0)...};
 
-  if (parsed && iter != end) {
+  if (iter != end) {
     error_handler(iter, "Error! Expecting end of input here: ");
-  }
-
-  if (!parsed || iter != end) {
     FAIL(sst.str());
   }
+}
+
+inline auto checkMain() {
+  auto r = x3::rule<struct main>{"main"} = x3::lit("main:");
+  return r;
 }
 
 template <typename CheckDest, typename CheckSrc>

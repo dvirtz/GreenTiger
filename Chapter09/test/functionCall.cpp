@@ -1,7 +1,7 @@
 #include "Test.h"
 
 TEST_CASE("function call") {
-  OptLabel functionLabel, functionEnd;
+  OptLabel functionLabel, functionEnd, end;
   OptReg temps[2];
   OptReg staticLink;
 
@@ -14,14 +14,13 @@ in
 end
 )");
 
-    checkProgram(program,
+    checkProgram(program, checkLabel(functionLabel), ':', // function label
+                 checkMove(                               // body
+                   returnReg(), checkImm(0)),
+                 branchToEnd(functionEnd), checkMain(),
                  checkLocalCall( // call
                    checkLabel(functionLabel), staticLink, temps),
-                 x3::eps,
-                 checkLabel(functionLabel) > ':' > // function label
-                   checkMove(                      // body
-                     returnReg(), checkImm(0))
-                   > branchToEnd(functionEnd));
+                 branchToEnd(end));
   }
 
   SECTION("with arguments") {
@@ -33,13 +32,12 @@ end
   end
   )");
     checkProgram(
-      program,
+      program, checkLabel(functionLabel), ':', // function label,
+      checkMove(                               // body
+        returnReg(), checkImm(0)),
+      branchToEnd(functionEnd), checkMain(),
       checkLocalCall( // call
         checkLabel(functionLabel), staticLink, temps, checkArg(1, checkImm(2))),
-      x3::eps,
-      checkLabel(functionLabel) > ':' > // function label,
-        checkMove(                      // body
-          returnReg(), checkImm(0))
-        > branchToEnd(functionEnd));
+      branchToEnd(end));
   }
 }

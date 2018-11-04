@@ -7,6 +7,7 @@ auto checkLibraryCall(const std::string &name, const std::string &params,
                       const boost::optional<std::string> &returnType = {},
                       const CheckStrings &checkStrings = x3::eps) {
   OptReg v, staticLink, temps[2];
+  OptLabel end;
   auto program = returnType ? ("let var v : " + *returnType + " := " + name
                                + "(" + params + ") in v end")
                             : (name + "(" + params + ")");
@@ -15,10 +16,9 @@ auto checkLibraryCall(const std::string &name, const std::string &params,
     (x3::eps(returnType.is_initialized()) > checkMove(checkReg(v), returnReg())
      > checkMove(returnReg(), checkReg(v)))
     | x3::eps;
-  checkProgram(compiled,
-               checkLocalCall(x3::lit(name), staticLink, temps, checkArgs)
-                 > checkReturnValue,
-               checkStrings);
+  checkProgram(compiled, checkStrings, checkMain(),
+               checkLocalCall(x3::lit(name), staticLink, temps, checkArgs),
+               checkReturnValue, branchToEnd(end));
 }
 
 TEST_CASE("standard library") {

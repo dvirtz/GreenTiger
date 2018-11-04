@@ -1,6 +1,8 @@
 #include "Test.h"
 
 TEST_CASE("nil") {
+  OptLabel end;
   auto program = checkedCompile("nil");
-  checkProgram(program, checkMove(returnReg(), checkImm(0)));
+  checkProgram(program, checkMain(), checkMove(returnReg(), checkImm(0)),
+               branchToEnd(end));
 }

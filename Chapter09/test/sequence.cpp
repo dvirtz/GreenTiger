@@ -1,14 +1,17 @@
 #include "Test.h"
 
 TEST_CASE("sequence") {
+  OptLabel end;
   SECTION("empty") {
     auto program = checkedCompile("()");
-    checkProgram(program, checkMove(returnReg(), checkImm(0)));
+    checkProgram(program, checkMain(), checkMove(returnReg(), checkImm(0)),
+                 branchToEnd(end));
   }
 
   SECTION("single") {
     auto program = checkedCompile("(42)");
-    checkProgram(program, checkMove(returnReg(), checkImm(42)));
+    checkProgram(program, checkMain(), checkMove(returnReg(), checkImm(42)),
+                 branchToEnd(end));
   }
 
   SECTION("multiple") {
@@ -17,7 +20,8 @@ TEST_CASE("sequence") {
     OptReg regs[2];
     OptLabel strLabel;
     OptReg staticLink;
-    checkProgram(program, checkLocalCall(x3::lit("flush"), staticLink, regs),
-                 checkStringInit(strLabel, R"("two")"));
+    checkProgram(program, checkStringInit(strLabel, R"("two")"), checkMain(),
+                 checkLocalCall(x3::lit("flush"), staticLink, regs),
+                 branchToEnd(end));
   }
 }
