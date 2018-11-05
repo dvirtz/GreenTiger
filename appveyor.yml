@@ -11,10 +11,8 @@ environment:
     # - TOOLCHAIN: "nmake-vs-15-2017-win64-cxx17"
     #   APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
 
-    # Compiler is out of heap space
-    # https://ci.appveyor.com/project/dvirtz/greentiger/build/job/4csd9ppqhi2hqtch
-    # - TOOLCHAIN: "vs-15-2017-win64-cxx17-ninja-toolchains"
-    #   APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    - TOOLCHAIN: "vs-15-2017-win64-cxx17"
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
 
     # - TOOLCHAIN: "vs-14-2015-sdk-8-1"
     #   APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
