@@ -18,8 +18,9 @@ end
                  checkMove(                               // body
                    returnReg(), checkImm(0)),
                  branchToEnd(functionEnd), checkMain(),
-                 checkLocalCall( // call
-                   checkLabel(functionLabel), staticLink, temps),
+                 checkStaticLink(staticLink, temps),
+                 checkCall(//call
+                   checkLabel(functionLabel), checkArg(0, checkReg(staticLink))),
                  branchToEnd(end));
   }
 
@@ -36,8 +37,9 @@ end
       checkMove(                               // body
         returnReg(), checkImm(0)),
       branchToEnd(functionEnd), checkMain(),
-      checkLocalCall( // call
-        checkLabel(functionLabel), staticLink, temps, checkArg(1, checkImm(2))),
+      checkStaticLink(staticLink, temps),
+      checkCall( // call
+        checkLabel(functionLabel), checkArg(0, checkReg(staticLink)) > checkArg(1, checkImm(2))),
       branchToEnd(end));
   }
 }

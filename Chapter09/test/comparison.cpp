@@ -1,4 +1,5 @@
 #include "Test.h"
+#include <boost/format.hpp>
 
 TEST_CASE("comparison") {
   static const std::pair<std::string, ir::RelOp> relations[] = {
@@ -56,7 +57,7 @@ TEST_CASE("comparison") {
           checkStringInit(rightString, R"("3")"), checkMain(),
           checkMove(checkReg(regs[0]),
                     checkImm(1)), // move 1 to r2
-          checkExternalCall("stringCompare",
+          checkCall("stringCompare",
                             checkArg(0, checkString(leftString))
                               > checkArg(1, checkString(rightString))),
           checkMove(checkReg(regs[1]), returnReg()),
@@ -103,7 +104,7 @@ TEST_CASE("comparison") {
         OptLabel trueDest, falseDest;
         checkProgram(
           program, checkMain(),
-          checkExternalCall("malloc", checkArg(0, checkImm(0))),
+          checkCall("malloc", checkArg(0, checkImm(0))),
           checkMove( // move result of
                      // malloc(record_size) to r
             checkReg(regs[0]), returnReg()),
@@ -147,10 +148,10 @@ TEST_CASE("comparison") {
           checkMove(checkReg(regs[1]), checkImm(2)),
           checkBinaryOperation(ir::BinOp::MUL, checkReg(regs[0]),
                                checkReg(regs[1]), regs[2]),
-          checkExternalCall("malloc", checkArg(0, checkReg(regs[2]))),
+          checkCall("malloc", checkArg(0, checkReg(regs[2]))),
           checkMove( // move result of malloc(array_size) to r
             checkReg(regs[3]), returnReg()),
-          checkExternalCall(
+          checkCall(
             "initArray",
             checkArg(0, checkImm(2))
               > checkArg(1,

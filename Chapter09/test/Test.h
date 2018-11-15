@@ -1,4 +1,5 @@
-#include "Program.h"
+#include "TempMap.h"
+#include "Tree.h"
 #include "warning_suppress.h"
 #include <array>
 #include <boost/optional/optional_io.hpp>
@@ -50,11 +51,7 @@ inline auto framePointer() {
   return r;
 }
 
-inline auto checkedCompile(const std::string &string) {
-  auto res = tiger::compile(arch, string);
-  REQUIRE(res);
-  return *res;
-}
+std::string checkedCompile(const std::string &string);
 
 template <typename T> inline auto setOrCheck(boost::optional<T> &op) {
   return [&op](auto &ctx) {
@@ -107,7 +104,8 @@ inline void checkProgram(const std::string &program,
   };
 
   // parse all expressions
-  (void)std::initializer_list<int>{(parseExpression(iter, end, expressions), 0)...};
+  (void)std::initializer_list<int>{
+    (parseExpression(iter, end, expressions), 0)...};
 
   if (iter != end) {
     error_handler(iter, "Error! Expecting end of input here: ");
@@ -283,25 +281,9 @@ inline auto checkStaticLink(OptReg (&staticLinks)[N], OptReg (&temps)[N * 2]) {
                          gsl::span<OptReg, 2 * N>{temps});
 }
 
-template <typename CheckLabel, typename CheckPrepareArgs = x3::eps_parser,
-          typename CheckArgs = x3::eps_parser>
-inline auto checkLocalCall(const CheckLabel &checkLabel, OptReg &staticLink,
-                           gsl::span<OptReg, 2> temps,
-                           const CheckArgs &checkArgs               = x3::eps,
-                           const CheckPrepareArgs &checkPrepareArgs = x3::eps) {
-  auto const r = x3::rule<struct local_call>{"local call"} =
-    checkStaticLink(gsl::span<OptReg, 1>{&staticLink, 1}, temps)
-    > checkCall(checkLabel, checkPrepareArgs > checkArg(0, checkReg(staticLink))
-                              > checkArgs);
-  return r;
-}
-
-template <typename CheckArgs>
-inline auto checkExternalCall(const std::string &name,
-                              const CheckArgs &checkArgs) {
-  auto const r = x3::rule<struct external_call>{"external call"} =
-    checkCall(x3::lit(name), checkArgs);
-  return r;
+inline auto checkStaticLink(OptReg &staticLink, OptReg (&temps)[2]) {
+  return checkStaticLink(gsl::span<OptReg, 1>{&staticLink, 1},
+                         gsl::span<OptReg, 2>{temps});
 }
 
 inline auto checkString(OptLabel &stringLabel) {

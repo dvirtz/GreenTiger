@@ -1,4 +1,4 @@
-add_library(testMain STATIC Test.h TestMain.cpp)
+add_library(testMain STATIC Test.h TestMain.cpp checkedCompile.cpp)
 target_link_libraries(testMain PUBLIC 
   Catch2::Catch
   Microsoft.GSL::GSL

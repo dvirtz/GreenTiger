@@ -12,7 +12,7 @@ end
 )");
     OptReg regs[2];
     checkProgram(program, checkMain(),
-                 checkExternalCall("malloc", checkArg(0, checkImm(0))),
+                 checkCall("malloc", checkArg(0, checkImm(0))),
                  checkMove( // move result of malloc(record_size) to
                    checkReg(regs[1]), returnReg()),
                  checkMove(returnReg(), checkReg(regs[1])), branchToEnd(end));
@@ -31,7 +31,7 @@ end
     OptLabel stringLabel;
     checkProgram(
       program, checkStringInit(stringLabel, R"("hello")"), checkMain(),
-      checkExternalCall("malloc", checkArg(0, checkImm(2 * wordSize()))),
+      checkCall("malloc", checkArg(0, checkImm(2 * wordSize()))),
       checkMove(checkReg(regs[1]), // move result of malloc(record_size) to r
                 returnReg()),
       checkMemberAccess(regs[1], 0, regs[2], temps[0]),

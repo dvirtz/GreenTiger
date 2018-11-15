@@ -17,11 +17,12 @@ TEST_CASE("sequence") {
   SECTION("multiple") {
     // no-op expressions are removed
     auto program = checkedCompile(R"((1;"two";flush()))");
-    OptReg regs[2];
+    OptReg temps[2];
     OptLabel strLabel;
     OptReg staticLink;
     checkProgram(program, checkStringInit(strLabel, R"("two")"), checkMain(),
-                 checkLocalCall(x3::lit("flush"), staticLink, regs),
+                 checkStaticLink(staticLink, temps),
+                 checkCall("flush", checkArg(0, checkReg(staticLink))),
                  branchToEnd(end));
   }
 }

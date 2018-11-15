@@ -64,10 +64,10 @@ end
       checkMove(checkReg(regs[1]), checkImm(2)),
       checkBinaryOperation(ir::BinOp::MUL, checkReg(regs[0]), checkReg(regs[1]),
                            regs[2]),
-      checkExternalCall("malloc", checkArg(0, checkReg(regs[2]))),
+      checkCall("malloc", checkArg(0, checkReg(regs[2]))),
       checkMove( // set regs[3] to result of malloc(array size),
         checkReg(regs[3]), returnReg()),
-      checkExternalCall( // call initArray(array
+      checkCall( // call initArray(array
                          // size, array init val)
         "initArray", checkArg(0, checkImm(2)) > checkArg(1, checkImm(3))),
       checkMove(checkReg(regs[6]), // move regs[3] to regs[6],

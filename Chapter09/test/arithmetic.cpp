@@ -1,4 +1,5 @@
 #include "Test.h"
+#include <boost/format.hpp>
 
 TEST_CASE("arithmetic") {
   static const std::pair<std::string, ir::BinOp> operations[] = {

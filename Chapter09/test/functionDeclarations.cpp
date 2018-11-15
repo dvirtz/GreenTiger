@@ -184,11 +184,13 @@ end
       checkBinaryOperation(ir::BinOp::PLUS, checkReg(regs[3]),
                            checkReg(regs[4]), regs[5]),
       checkMove(returnReg(), checkReg(regs[5])), branchToEnd(gEnd),
-      checkLabel(f), ':',
-      checkLocalCall(checkLabel(g), staticLinks[1], temps[1]),
-      branchToEnd(fEnd), checkMain(),
-      checkLocalCall( // f(3)
-        checkLabel(f), staticLinks[0], temps[0], checkArg(1, checkImm(3))),
+      checkLabel(f), ':', checkStaticLink(staticLinks[1], temps[1]),
+      checkCall( // g()
+        checkLabel(g), checkArg(0, checkReg(staticLinks[1]))),
+      branchToEnd(fEnd), checkMain(), checkStaticLink(staticLinks[0], temps[0]),
+      checkCall( // f(3)
+        checkLabel(f),
+        checkArg(0, checkReg(staticLinks[0])) > checkArg(1, checkImm(3))),
       branchToEnd(end));
   }
 }

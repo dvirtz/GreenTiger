@@ -16,9 +16,11 @@ auto checkLibraryCall(const std::string &name, const std::string &params,
     (x3::eps(returnType.is_initialized()) > checkMove(checkReg(v), returnReg())
      > checkMove(returnReg(), checkReg(v)))
     | x3::eps;
-  checkProgram(compiled, checkStrings, checkMain(),
-               checkLocalCall(x3::lit(name), staticLink, temps, checkArgs),
-               checkReturnValue, branchToEnd(end));
+  checkProgram(
+    compiled, checkStrings, checkMain(),
+    checkStaticLink(staticLink, temps),
+    checkCall(x3::lit(name), checkArg(0, checkReg(staticLink)) > checkArgs),
+    checkReturnValue, branchToEnd(end));
 }
 
 TEST_CASE("standard library") {
