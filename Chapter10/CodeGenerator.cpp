@@ -12,14 +12,13 @@ MSC_DIAG_OFF(4996 4459 4456)
 MSC_DIAG_ON()
 #include <range/v3/algorithm/for_each.hpp>
 MSC_DIAG_OFF(4913)
+#include <range/v3/algorithm/generate_n.hpp>
 #include <range/v3/algorithm/move.hpp>
 MSC_DIAG_ON()
 MSC_DIAG_OFF(4459)
 #include <range/v3/algorithm/max.hpp>
 MSC_DIAG_ON()
-#include <range/v3/action/push_back.hpp>
 #include <range/v3/view/concat.hpp>
-#include <range/v3/view/generate_n.hpp>
 #include <range/v3/view/join.hpp>
 #include <range/v3/view/transform.hpp>
 #include <regex>
@@ -188,10 +187,9 @@ boost::optional<DagMatcher::MatchData> DagMatcher::match(const Dag &dag) const {
 
     // generate operands whose index is larger than number of operands
     if (maxOperandIndex >= matchData.m_operands.size()) {
-      ranges::push_back(
-        matchData.m_operands,
-        rv::generate_n([this]() { return m_tempMap.newTemp(); },
-                       maxOperandIndex + 1 - matchData.m_operands.size()));
+      ranges::generate_n(ranges::back_inserter(matchData.m_operands),
+                         maxOperandIndex + 1 - matchData.m_operands.size(),
+                         [this]() { return m_tempMap.newTemp(); });
     }
 
     auto const toOperands =
