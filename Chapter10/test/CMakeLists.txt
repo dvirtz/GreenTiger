@@ -1,4 +1,4 @@
-add_library(${CHAPTER}_testMain STATIC Test.h TestMain.cpp checkedCompile.cpp)
+add_library(${CHAPTER}_testMain STATIC Test.h TestMain.cpp Test.cpp)
 
 set_target_properties(${CHAPTER}_testMain PROPERTIES OUTPUT_NAME testMain)
 
@@ -12,6 +12,11 @@ target_link_libraries(${CHAPTER}_testMain PUBLIC
 )
 
 function(add_chapter_test name)
+
+  if(MSVC)
+	  set_source_files_properties(${name}.cpp PROPERTIES COMPILE_FLAGS /bigobj)
+  endif()
+
   add_executable(${CHAPTER}_${name} ${name}.cpp)
 
   set_target_properties(${CHAPTER}_${name} PROPERTIES OUTPUT_NAME ${name})
@@ -21,7 +26,7 @@ function(add_chapter_test name)
       ${CHAPTER}_testMain
   )
   
-  parse_unit_tests(${CHAPTER}_${name} --timeout 20 ARCHS m68k x64)
+  parse_unit_tests(${CHAPTER}_${name} ARCHS m68k x64)
 endfunction()
 
 add_chapter_test(compileFiles)

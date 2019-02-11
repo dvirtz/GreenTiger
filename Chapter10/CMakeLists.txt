@@ -1,6 +1,5 @@
-set(CHAPTER Chapter09)
-
-macro(add_machine name) 
+set(CHAPTER Chapter10)
+macro(add_machine name)
   add_subdirectory(${name})
   list(APPEND MACHINES ${name})
   list(APPEND MACHINE_LIBRARIES ${CHAPTER}_${name})
@@ -18,14 +17,14 @@ endforeach()
 configure_file(MachineRegistration.h.in MachineRegistration.h)
 
 set(SOURCES Program.cpp SemanticAnalyzer.cpp TempMap.cpp EscapeAnalyser.cpp Translator.cpp Tree.cpp Canonicalizer.cpp Assembly.cpp 
-  CodeGenerator.cpp CallingConvention.cpp)
+  CodeGenerator.cpp CallingConvention.cpp FlowGraph.cpp LivenessAnalyser.cpp Frame.cpp)
 set(HEADERS Program.h ErrorHandler.h ExpressionParser.h Skipper.h IdentifierParser.h DeclerationParser.h AbstractSyntaxTree.h 
   Annotation.h StringParser.h SemanticAnalyzer.h Types.h TempMap.h Frame.h CallingConvention.h EscapeAnalyser.h Translator.h Tree.h 
-  Fragment.h  Canonicalizer.h Assembly.h CodeGenerator.h MachineRegistrar.h)
+  Fragment.h  Canonicalizer.h Assembly.h CodeGenerator.h MachineRegistrar.h FlowGraph.h LivenessAnalyser.h TempLabel.h TempRegister.h)
 
-add_library(Chapter09 ${HEADERS} ${SOURCES})
+add_library(Chapter10 ${HEADERS} ${SOURCES})
 
-target_include_directories(Chapter09 
+target_include_directories(Chapter10 
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} 
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
 )
@@ -34,7 +33,7 @@ if(MSVC)
 	set_source_files_properties(Program.cpp PROPERTIES COMPILE_FLAGS /bigobj)
 endif()
 
-target_link_libraries(Chapter09 
+target_link_libraries(Chapter10 
   PRIVATE
     ${MACHINE_LIBRARIES}
   PUBLIC

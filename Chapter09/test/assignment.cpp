@@ -16,7 +16,7 @@ end
                  checkReg(a), checkImm(3)),
                checkMove( // move 0 to b
                  checkReg(b), checkImm(0)),
-               checkMove( // move b to a
+               checkMove( // move a to b
                  checkReg(b), checkReg(a)),
                checkMove( // return 0
                  returnReg(), checkImm(0)),
