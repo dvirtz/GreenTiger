@@ -12,6 +12,7 @@
 MSC_DIAG_OFF(4913)
 #include <range/v3/algorithm/copy.hpp>
 MSC_DIAG_ON()
+#include <range/v3/iterator/insert_iterators.hpp>
 
 namespace tiger {
 

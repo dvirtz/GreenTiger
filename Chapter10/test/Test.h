@@ -17,7 +17,7 @@ MSC_DIAG_ON()
 #include <boost/fusion/include/fold.hpp>
 #include <boost/fusion/include/std_tuple.hpp>
 #define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 #include <gsl/span>
 #include <range/v3/action/drop.hpp>
 #include <range/v3/action/push_back.hpp>
@@ -145,8 +145,8 @@ protected:
 
     template <typename Cont,
               typename = std::enable_if_t<std::is_constructible<
-                base, decltype(ranges::begin(std::declval<Cont>())),
-                decltype(ranges::end(std::declval<Cont>()))>::value>>
+                base, decltype(ranges::begin(std::declval<const Cont &>())),
+                decltype(ranges::end(std::declval<const Cont &>()))>::value>>
     RegList(const Cont &registers) :
         base{ranges::begin(registers), ranges::end(registers)} {}
   };
@@ -614,7 +614,7 @@ inline TestFixture::parser TestFixture::checkArg(size_t index, Arg &&arg,
     helpers::overload([](OptReg &reg) { return RegList{reg}; },
                       [](auto && /*default*/) { return RegList{}; })(arg);
 
-  auto const r = x3::rule<struct arg>("argument") = [&]() -> parser {
+  auto const r = x3::rule<struct arg_>("argument") = [&]() -> parser {
     if (arch == "m68k") {
       return checkMove(
         x3::lit('+') > checkMemoryAccess(checkReg(stackPointer())), argChecker,

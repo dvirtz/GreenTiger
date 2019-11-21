@@ -34,13 +34,15 @@ if(MSVC)
 	set_source_files_properties(Program.cpp PROPERTIES COMPILE_FLAGS /bigobj)
 endif()
 
+target_include_directories(Chapter09 PUBLIC ${CONAN_GSL_MICROSOFT_ROOT}/include)
+
 target_link_libraries(Chapter09 
   PRIVATE
     ${MACHINE_LIBRARIES}
   PUBLIC
     Boost::boost 
     includeHeaders
-    range-v3::range-v3
+    range-v3
 )
 
 add_subdirectory(test)

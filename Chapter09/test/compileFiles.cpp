@@ -1,7 +1,7 @@
 #include "Program.h"
 #include "testsHelper.h"
 #include <boost/optional/optional_io.hpp>
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 extern std::string arch;
 

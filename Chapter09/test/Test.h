@@ -8,7 +8,7 @@ MSC_DIAG_OFF(4496 4459 4127)
 #include <boost/spirit/home/x3/support/utility/error_reporting.hpp>
 MSC_DIAG_ON()
 #include <boost/format.hpp>
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 #include <gsl/span>
 
 extern std::string arch;

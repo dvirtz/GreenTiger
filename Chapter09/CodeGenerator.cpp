@@ -16,6 +16,7 @@ MSC_DIAG_OFF(4913)
 MSC_DIAG_ON()
 #include <range/v3/action/push_back.hpp>
 #include <range/v3/view/transform.hpp>
+#include <range/v3/iterator/insert_iterators.hpp>
 #include <regex>
 #include <sstream>
 

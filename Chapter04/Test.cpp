@@ -6,7 +6,7 @@
 #include <boost/format.hpp>
 #include <boost/optional/optional_io.hpp>
 #include <boost/variant/get.hpp>
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 using namespace tiger;
 using boost::get;

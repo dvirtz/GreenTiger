@@ -21,7 +21,7 @@ target_link_libraries(Chapter08
         Boost::boost 
         Boost::filesystem 
         Boost::system
-        Catch2::Catch 
+        Catch2::Catch2 
         includeHeaders
 )
 

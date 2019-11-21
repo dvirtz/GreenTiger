@@ -21,6 +21,7 @@ MSC_DIAG_ON()
 #include <range/v3/view/concat.hpp>
 #include <range/v3/view/join.hpp>
 #include <range/v3/view/transform.hpp>
+#include <range/v3/iterator/insert_iterators.hpp>
 #include <regex>
 #include <sstream>
 

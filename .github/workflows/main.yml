@@ -1,0 +1,35 @@
+name: green_tiget workflow
+on:
+  pull_request:
+  push:
+    branches: master
+
+jobs:
+  ubuntu:
+    strategy:
+      matrix:
+        image: [gcc9, clang9]
+        build_type: [Debug, Release]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@master
+      - name: run docker
+        run: docker run --rm -v $GITHUB_WORKSPACE:/home/conan/repo conanio/${{ matrix.image }} cmake -DBUILD_TYPE=${{ matrix.build_type }} -P /home/conan/repo/ci/build.cmake
+
+  windows-native:
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+    runs-on: windows-2019
+    env: 
+      CC: cl.exe
+      CXX: cl.exe
+    steps:
+      - uses: actions/checkout@master
+      - name: install conan
+        run: pip install conan
+      - name: build
+        shell: cmd
+        run: |
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          call cmake -DBUILD_TYPE=${{ matrix.build_type }} -P ci/build.cmake

@@ -145,10 +145,10 @@ public:
       return false;
     }
 
-    auto m = mismatch(other, m_r);
-    if (m.first != end(other)) {
-      m_message = "at index "s + stringify(distance(begin(other), m.first))
-                  + ": " + stringify(*m.first) + " != " + stringify(*m.second);
+    auto &&[first, last] = mismatch(other, m_r);
+    if (first != end(other)) {
+      m_message = "at index "s + stringify(distance(begin(other), first))
+                  + ": " + stringify(*first) + " != " + stringify(*last);
       return false;
     }
 

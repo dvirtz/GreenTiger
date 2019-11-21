@@ -8,6 +8,7 @@ MSC_DIAG_OFF(4100)
 #include <range/v3/view/intersperse.hpp>
 MSC_DIAG_ON()
 #include <range/v3/view/transform.hpp>
+#include <range/v3/iterator/stream_iterators.hpp>
 
 namespace helpers {
 template <typename R, typename ElementToString>
