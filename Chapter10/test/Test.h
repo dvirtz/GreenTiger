@@ -2,9 +2,6 @@
 #include "Tree.h"
 #include "irange.h"
 #include "warning_suppress.h"
-#ifdef _MSC_VER
-#include "satisfy_boost_range_backport.hpp"
-#endif
 #include <array>
 #include <boost/optional/optional_io.hpp>
 #include <set>
@@ -400,8 +397,8 @@ inline TestFixture::parser TestFixture::checkReg(const temp::Register &reg) {
 inline TestFixture::parser TestFixture::checkReg(OptReg &reg) {
   static auto const predefinedRegisters = this->predefinedRegisters();
   static const x3::symbols<temp::Register> regsParser{
-    predefinedRegisters | ranges::view::values,
-    predefinedRegisters | ranges::view::keys, "regsParser"};
+    predefinedRegisters | ranges::views::values,
+    predefinedRegisters | ranges::views::keys, "regsParser"};
   auto const r = x3::rule<struct reg_>{"register"} =
     ((x3::lit("t") >> x3::int_[setOrCheck(reg)]) | regsParser[setOrCheck(reg)]);
   return r;
@@ -541,7 +538,7 @@ inline TestFixture::parser TestFixture::checkMove(Dst &&dest, Src &&src,
 
 inline auto TestFixture::liveRegistersAnd(const RegList &liveRegisters) const {
   return [&liveRegisters](auto&&... regs) {
-    return ranges::view::concat(liveRegisters, ranges::view::single(Reg{regs})...);
+    return ranges::views::concat(liveRegisters, ranges::views::single(Reg{regs})...);
   };
 }
 
@@ -618,7 +615,7 @@ inline TestFixture::parser TestFixture::checkArg(size_t index, Arg &&arg,
     if (arch == "m68k") {
       return checkMove(
         x3::lit('+') > checkMemoryAccess(checkReg(stackPointer())), argChecker,
-        ranges::view::concat(ranges::view::single(stackPointer()), uses));
+        ranges::views::concat(ranges::views::single(stackPointer()), uses));
     }
 
     static const auto &argumentRegisters = this->argumentRegisters();
@@ -648,15 +645,15 @@ inline TestFixture::parser TestFixture::checkArgs(const RegList &liveRegisters,
     },
     [](const temp::Register &r) { return boost::optional<Reg>{r}; },
     [](const auto &) { return boost::optional<Reg>{}; });
-  auto const arguments   = view::concat(view::single(toOptReg(args))...);
+  auto const arguments   = views::concat(views::single(toOptReg(args))...);
   auto withLiveArguments = [&liveRegisters, arguments](size_t i) -> RegList {
     std::vector<boost::optional<Reg>> a{
-      arguments | view::drop(i + 1)
-      | view::filter(
+      arguments | views::drop(i + 1)
+      | views::filter(
           [](const boost::optional<Reg> &r) { return r.is_initialized(); })};
-    return view::concat(
+    return views::concat(
       liveRegisters,
-      view::transform(a, [](const boost::optional<Reg> &r) { return *r; }));
+      views::transform(a, [](const boost::optional<Reg> &r) { return *r; }));
   };
   return combineParsers(checkArg(I, args, withLiveArguments(I))...);
 }
@@ -905,7 +902,7 @@ inline TestFixture::parser TestFixture::checkParameterMove(size_t index,
     x3::rule<struct parameter_move>{"parameter move"} = [&]() -> parser {
     if (index < argumentRegisters.size()) {
       auto const liveRegisters =
-        argumentRegisters | ranges::view::slice(index + 1, argumentCount) | ranges::to_vector;
+        argumentRegisters | ranges::views::slice(index + 1, argumentCount) | ranges::to_vector;
       return checkInlineParameterWrite(
         index, std::forward<Arg>(arg), checkReg(argumentRegisters[index]),
         {argumentRegisters[index]}, {}, liveRegisters, does_escape<Arg>::value);

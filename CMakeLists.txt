@@ -26,7 +26,7 @@ conan_add_remote(
 
 
 set(DEPENDENCIES 
-      boost/1.69.0@conan/stable
+      boost/1.71.0@_/_
       range-v3/0.9.0@ericniebler/stable
       Catch2/2.9.2@catchorg/stable
       gsl_microsoft/2.0.0@bincrafters/stable
@@ -47,7 +47,7 @@ find_package(Catch2 CONFIG REQUIRED)
 
 find_package(range-v3 CONFIG REQUIRED)
 
-target_compile_options(range-v3 INTERFACE $<$<CXX_COMPILER_ID:GNU>:-Wno-deprecated-declarations>)
+target_compile_options(range-v3 INTERFACE $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-Wno-deprecated-declarations>)
 
 include(CompilerWarnings)
 

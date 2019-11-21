@@ -17,8 +17,8 @@ FlowGraph::FlowGraph(const assembly::Instructions &instructions) :
     base{instructions.size()}, m_uses{instructions.size()},
     m_defs{instructions.size()}, m_isMove{instructions.size()} {
   using namespace assembly;
-  namespace rv = ranges::view;
-  namespace ra = ranges::action;
+  namespace rv = ranges::views;
+  namespace ra = ranges::actions;
 
   const std::unordered_map<temp::Label, int> label_map =
     rv::zip(instructions, rv::ints)

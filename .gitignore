@@ -8,3 +8,6 @@
 # build folders
 _*/
 build
+
+# pyenv
+.python-version

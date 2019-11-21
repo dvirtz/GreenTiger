@@ -79,7 +79,7 @@ Instructions CodeGenerator::translateString(const temp::Label &label,
 Instructions
   CodeGenerator::translateArgs(const std::vector<ir::Expression> &args,
                                const temp::Map & /*tempMap*/) const {
-  namespace rv                 = ranges::view;
+  namespace rv                 = ranges::views;
   auto const registerArguments = rv::zip_with(
     [](temp::Register argumentRegister, const ir::Expression &arg) {
       return helpers::match(arg)(

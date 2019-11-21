@@ -173,7 +173,7 @@ void TestFixture::checkInterference(
   const InterferenceGraphs &interefernceGraphs) const {
   REQUIRE(ranges::distance(interefernceGraphs)
           == ranges::distance(m_interferences));
-  ranges::for_each(ranges::view::zip(interefernceGraphs, m_interferences),
+  ranges::for_each(ranges::views::zip(interefernceGraphs, m_interferences),
                    [](const auto &p) {
                      REQUIRE_THAT(p.first, Equals<decltype(p.first)>(p.second));
                    });

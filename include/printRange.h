@@ -16,8 +16,8 @@ void printRange(std::ostream &ost, const R &rng,
                 ElementToString &&elementToString) {
   using namespace ranges;
   ost << "{";
-  copy(rng | view::transform(std::forward<ElementToString>(elementToString))
-         | view::intersperse(", "),
+  copy(rng | views::transform(std::forward<ElementToString>(elementToString))
+         | views::intersperse(", "),
        ostream_iterator<std::string>(ost));
   ost << "}";
 }

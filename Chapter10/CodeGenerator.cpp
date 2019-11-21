@@ -169,7 +169,7 @@ boost::optional<DagMatcher::MatchData> DagMatcher::match(const Dag &dag) const {
       continue;
     }
 
-    namespace rv = ranges::view;
+    namespace rv = ranges::views;
 
     auto maxOperandIndex = ranges::max(
       pattern.m_initializers
@@ -312,7 +312,7 @@ bool DagMatcher::match(const ir::Call &code, const ir::Call &pattern,
 
   bool matchFailed = false;
   auto args =
-    code.args | ranges::view::transform([&](const ir::Expression &arg) {
+    code.args | ranges::views::transform([&](const ir::Expression &arg) {
       return helpers::match(arg)(
         [](int i) -> ir::Expression { return i; },
         [](const temp::Register &reg) -> ir::Expression { return reg; },

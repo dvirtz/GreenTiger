@@ -70,8 +70,8 @@ CompileResult compile(const std::string &arch, Iterator &first,
       Canonicalizer canonicalizer{tempMap};
       auto &codeGenerator = machine->codeGenerator();
 
-      namespace rv = ranges::view;
-      namespace ra = ranges::action;
+      namespace rv = ranges::views;
+      namespace ra = ranges::actions;
       auto const fragments =
         compiled | rv::transform([&](Fragment &fragment) {
           return helpers::match(fragment)(

@@ -72,7 +72,7 @@ void Instruction::print(std::ostream &out, const temp::Map &tempMap) const {
 
   auto const noop = [](size_t) { assert(false && "should not get here"); };
 
-  namespace rv = ranges::view;
+  namespace rv = ranges::views;
 
   helpers::match (*this)(
     [&](const Label &label) {
@@ -109,7 +109,7 @@ Instruction Instruction::create(const InstructionType type,
     parse(inst.m_syntax, setOperand(inst.m_labels),
           setOperand(inst.m_destinations), setOperand(inst.m_sources),
           setOperand(inst.m_immediates), noop);
-    auto const toRegisters = ranges::view::transform(
+    auto const toRegisters = ranges::views::transform(
       [](const Operand &op) { return boost::get<temp::Register>(op); });
     inst.m_implicitDestinations = implicitDestinations | toRegisters;
     inst.m_implicitSources      = implicitSources | toRegisters;
@@ -155,7 +155,7 @@ temp::Registers Instruction::destinations() const {
   return helpers::match(*this)(
     [](const Label &) -> temp::Registers { return {}; },
     [](const auto &inst) -> temp::Registers {
-      return ranges::view::concat(inst.m_destinations,
+      return ranges::views::concat(inst.m_destinations,
                                   inst.m_implicitDestinations);
     });
 }
@@ -164,7 +164,7 @@ temp::Registers Instruction::sources() const {
   return helpers::match(*this)(
     [](const Label &) -> temp::Registers { return {}; },
     [](const auto &inst) -> temp::Registers {
-      return ranges::view::concat(inst.m_sources, inst.m_implicitSources);
+      return ranges::views::concat(inst.m_sources, inst.m_implicitSources);
     });
 }
 
@@ -195,7 +195,7 @@ assembly::Instructions
   }
   return res;
 #else
-  return instructions | view::join;
+  return instructions | views::join;
 #endif
 }
 

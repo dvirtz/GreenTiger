@@ -20,8 +20,8 @@ MSC_DIAG_OFF(4239 4459 4913)
 #include <range/v3/view/transform.hpp>
 MSC_DIAG_ON()
 
-namespace rv = ranges::view;
-namespace ra = ranges::action;
+namespace rv = ranges::views;
+namespace ra = ranges::actions;
 
 namespace tiger {
 namespace regalloc {

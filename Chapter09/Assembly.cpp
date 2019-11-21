@@ -25,7 +25,7 @@ Operation::Operation(std::initializer_list<std::string> syntaxes,
                      const Registers &sources /* = {} */,
                      const Labels &labels /* = {} */,
                      const Immediates &immediates /* = {} */) :
-    m_syntax{syntaxes | ranges::view::intersperse("\n") | ranges::action::join},
+    m_syntax{syntaxes | ranges::views::intersperse("\n") | ranges::actions::join},
     m_destinations{destinations}, m_sources{sources}, m_jumps{labels},
     m_immediates{immediates} {}
 
@@ -109,7 +109,7 @@ assembly::Instructions
   }
   return res;
 #else
-  return action::join(instructions);
+  return actions::join(instructions);
 #endif
 }
 
