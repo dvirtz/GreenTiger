@@ -9,7 +9,7 @@ MSC_DIAG_OFF(4913)
 #include <range/v3/algorithm/copy.hpp>
 #include <range/v3/algorithm/move.hpp>
 MSC_DIAG_ON()
-MSC_DIAG_OFF(4459)
+MSC_DIAG_OFF(4459 4702)
 #include <range/v3/view/join.hpp>
 MSC_DIAG_ON()
 #include <gsl/span>

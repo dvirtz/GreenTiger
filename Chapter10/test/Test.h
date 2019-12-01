@@ -16,6 +16,7 @@ MSC_DIAG_ON()
 #define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
 #include <catch2/catch.hpp>
 #include <gsl/span>
+MSC_DIAG_OFF(4702 4172)
 #include <range/v3/action/drop.hpp>
 #include <range/v3/action/push_back.hpp>
 #include <range/v3/action/take.hpp>
@@ -24,9 +25,7 @@ MSC_DIAG_ON()
 #include <range/v3/algorithm/find.hpp>
 #include <range/v3/algorithm/for_each.hpp>
 #include <range/v3/numeric/accumulate.hpp>
-MSC_DIAG_OFF(4702 4172)
 #include <range/v3/view/concat.hpp>
-MSC_DIAG_ON()
 #include <range/v3/view/drop.hpp>
 #include <range/v3/view/empty.hpp>
 #include <range/v3/view/filter.hpp>
@@ -36,6 +35,7 @@ MSC_DIAG_ON()
 #include <range/v3/view/take.hpp>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/zip.hpp>
+MSC_DIAG_ON()
 
 namespace x3   = boost::spirit::x3;
 namespace ir   = tiger::ir;

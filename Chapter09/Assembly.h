@@ -1,8 +1,11 @@
 #pragma once
 #include "TempMap.h"
+#include "warning_suppress.h"
 #include <boost/variant.hpp>
 #include <ostream>
+MSC_DIAG_OFF(4702)
 #include <range/v3/view/any_view.hpp>
+MSC_DIAG_ON()
 #include <string>
 #include <vector>
 

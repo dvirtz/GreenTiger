@@ -16,15 +16,15 @@
 #include <boost/spirit/include/classic_position_iterator.hpp>
 #include <boost/spirit/include/support_multi_pass.hpp>
 #include <fstream>
-MSC_DIAG_OFF(4459)
+MSC_DIAG_OFF(4459 4702)
 #include <range/v3/action/join.hpp>
 #include <range/v3/action/transform.hpp>
-MSC_DIAG_ON()
 #include <range/v3/algorithm/for_each.hpp>
 #include <range/v3/view/iota.hpp>
 #include <range/v3/view/join.hpp>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/zip.hpp>
+MSC_DIAG_ON()
 
 namespace tiger {
 
