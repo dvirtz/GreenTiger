@@ -6,7 +6,7 @@ MSC_DIAG_OFF(4459)
 #include <range/v3/action/sort.hpp>
 #include <range/v3/action/unique.hpp>
 #include <range/v3/algorithm/for_each.hpp>
-#include <range/v3/to_container.hpp>
+#include <range/v3/range/conversion.hpp>
 #include <range/v3/view.hpp>
 MSC_DIAG_ON()
 #include <unordered_map>

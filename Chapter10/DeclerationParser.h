@@ -3,7 +3,7 @@
 #include "ErrorHandler.h"
 #include "Skipper.h"
 #include "warning_suppress.h"
-MSC_DIAG_OFF(4996 4459)
+MSC_DIAG_OFF(4996 4459 4819)
 #include <boost/spirit/include/qi.hpp>
 MSC_DIAG_ON()
 #include <boost/spirit/include/phoenix_bind.hpp>
@@ -29,7 +29,7 @@ public:
     namespace phoenix = boost::phoenix;
 
     using namespace std::string_literals;
-    using namespace qi::labels;
+    using namespace boost::spirit::labels;
 
     using phoenix::at_c;
     using phoenix::push_back;

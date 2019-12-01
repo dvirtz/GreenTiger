@@ -11,7 +11,7 @@
 #include <boost/spirit/include/phoenix_object.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/phoenix_statement.hpp>
-MSC_DIAG_OFF(4996 4459)
+MSC_DIAG_OFF(4996 4459 4819)
 #include <boost/spirit/include/qi.hpp>
 MSC_DIAG_ON()
 
@@ -34,6 +34,7 @@ public:
     namespace phoenix = boost::phoenix;
 
     using namespace std::string_literals;
+    using namespace boost::spirit::qi::labels;
 
     using ascii::alnum;
     using phoenix::at_c;
@@ -51,8 +52,6 @@ public:
     using qi::skip;
     using qi::uint_;
     using qi::uint_parser;
-
-    using namespace qi::labels;
 
     relationalOp.add("=", ast::Operation::EQUAL)("<>",
                                                  ast::Operation::NOT_EQUAL)(

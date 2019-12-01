@@ -7,7 +7,6 @@ list(APPEND HEADERS x64FastCall/Frame.h x64FastCall/Frame.cpp)
 
 add_executable(Chapter07 ${HEADERS} ${SOURCES})
 
-target_compile_definitions(Chapter07 PRIVATE CATCH_CPP14_OR_GREATER)
 
 if(MSVC)
 	set_source_files_properties(Program.cpp PROPERTIES COMPILE_FLAGS /bigobj)

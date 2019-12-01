@@ -7,7 +7,7 @@
 #include <boost/fusion/include/make_vector.hpp>
 #include <boost/fusion/include/zip_view.hpp>
 #include <boost/optional.hpp>
-MSC_DIAG_OFF(4996 4459 4456)
+MSC_DIAG_OFF(4996 4459 4456 4819)
 #include <boost/spirit/include/karma.hpp>
 MSC_DIAG_ON()
 #include <range/v3/algorithm/for_each.hpp>

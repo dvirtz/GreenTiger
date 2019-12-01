@@ -40,14 +40,20 @@ conan_cmake_run(REQUIRES ${DEPENDENCIES}
 
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 
+set(Boost_USE_STATIC_LIBS ON)
 
 find_package(Boost REQUIRED COMPONENTS system filesystem)
+
+set_target_properties(Boost::filesystem PROPERTIES INTERFACE_COMPILE_DEFINITIONS "BOOST_ALL_NO_LIB")
 
 find_package(Catch2 CONFIG REQUIRED)
 
 find_package(range-v3 CONFIG REQUIRED)
 
-target_compile_options(range-v3 INTERFACE $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-Wno-deprecated-declarations>)
+target_compile_options(range-v3 
+  INTERFACE 
+    $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-Wno-deprecated-declarations> 
+    $<$<CXX_COMPILER_ID:MSVC>:/wd4996;/Wv:18>)
 
 include(CompilerWarnings)
 

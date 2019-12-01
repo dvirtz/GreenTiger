@@ -1,6 +1,6 @@
 #pragma once
 #include "warning_suppress.h"
-MSC_DIAG_OFF(4996 4459)
+MSC_DIAG_OFF(4996 4459 4819)
 #include <boost/spirit/include/qi.hpp>
 MSC_DIAG_ON()
 

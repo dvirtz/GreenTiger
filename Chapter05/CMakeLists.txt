@@ -4,7 +4,6 @@ set(HEADERS Program.h ErrorHandler.h ExpressionParser.h Skipper.h IdentifierPars
 
 add_executable(Chapter05 ${HEADERS} ${SOURCES})
 
-target_compile_definitions(Chapter05 PRIVATE CATCH_CPP14_OR_GREATER)
 
 if(MSVC)
 	set_source_files_properties(Program.cpp PROPERTIES COMPILE_FLAGS /bigobj)

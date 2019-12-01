@@ -18,6 +18,7 @@ MSC_DIAG_OFF(4239 4459 4913)
 #include <range/v3/algorithm/is_sorted.hpp>
 #include <range/v3/view/filter.hpp>
 #include <range/v3/view/transform.hpp>
+#include <range/v3/iterator/insert_iterators.hpp>
 MSC_DIAG_ON()
 
 namespace rv = ranges::views;

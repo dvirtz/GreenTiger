@@ -7,7 +7,7 @@
 #include <boost/fusion/include/make_vector.hpp>
 #include <boost/fusion/include/zip_view.hpp>
 #include <boost/optional.hpp>
-MSC_DIAG_OFF(4996 4459 4456)
+MSC_DIAG_OFF(4996 4459 4456 4819)
 #include <boost/spirit/include/karma.hpp>
 MSC_DIAG_ON()
 #include <range/v3/algorithm/for_each.hpp>
@@ -18,7 +18,9 @@ MSC_DIAG_ON()
 MSC_DIAG_OFF(4459)
 #include <range/v3/algorithm/max.hpp>
 MSC_DIAG_ON()
+MSC_DIAG_OFF(4702)
 #include <range/v3/view/concat.hpp>
+MSC_DIAG_ON()
 #include <range/v3/view/join.hpp>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/iterator/insert_iterators.hpp>

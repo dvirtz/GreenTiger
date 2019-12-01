@@ -1,8 +1,11 @@
 #include "Program.h"
 #include "Compiler.h"
 #include "ExpressionParser.h"
+#include "warning_suppress.h"
+MSC_DIAG_OFF(4819)
 #include <boost/spirit/include/classic_position_iterator.hpp>
 #include <boost/spirit/include/support_multi_pass.hpp>
+MSC_DIAG_ON()
 #include <fstream>
 
 namespace tiger {

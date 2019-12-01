@@ -1,7 +1,7 @@
 #include "Assembly.h"
 #include "variantMatch.h"
 #include "warning_suppress.h"
-MSC_DIAG_OFF(4459 4127)
+MSC_DIAG_OFF(4459 4127 4819)
 #include <boost/spirit/home/x3.hpp>
 MSC_DIAG_ON()
 #include <range/v3/algorithm/for_each.hpp>
@@ -188,15 +188,7 @@ std::ostream &operator<<(
 assembly::Instructions
   joinInstructions(gsl::span<const Instructions> instructions) {
   using namespace ranges;
-#ifdef _MSC_VER
-  assembly::Instructions res;
-  for (auto &&insts : instructions) {
-    move(insts, back_inserter(res));
-  }
-  return res;
-#else
   return instructions | views::join;
-#endif
 }
 
 } // namespace assembly

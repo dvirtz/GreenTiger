@@ -5,7 +5,7 @@
 #include <array>
 #include <boost/optional/optional_io.hpp>
 #include <set>
-MSC_DIAG_OFF(4496 4459 4127)
+MSC_DIAG_OFF(4496 4459 4127 4819)
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/utility/error_reporting.hpp>
 MSC_DIAG_ON()
@@ -36,12 +36,6 @@ MSC_DIAG_ON()
 #include <range/v3/view/take.hpp>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/zip.hpp>
-
-#ifdef _MSC_VER
-// make these work with boost
-RANGES_SATISFY_BOOST_RANGE(ranges::v3::iter_transform_view)
-RANGES_SATISFY_BOOST_RANGE(ranges::v3::transform_view)
-#endif
 
 namespace x3   = boost::spirit::x3;
 namespace ir   = tiger::ir;
@@ -142,10 +136,10 @@ protected:
 
     template <typename Cont,
               typename = std::enable_if_t<std::is_constructible<
-                base, decltype(ranges::begin(std::declval<const Cont &>())),
-                decltype(ranges::end(std::declval<const Cont &>()))>::value>>
-    RegList(const Cont &registers) :
-        base{ranges::begin(registers), ranges::end(registers)} {}
+                base, decltype(ranges::begin(std::declval<Cont&>())),
+                decltype(ranges::end(std::declval<Cont&&>()))>::value>>
+    RegList(Cont &&registers) :
+        base{ranges::begin(std::forward<Cont>(registers)), ranges::end(std::forward<Cont>(registers))} {}
   };
 
   template <typename SuccessorsChecker>
@@ -792,7 +786,7 @@ inline TestFixture::parser
                                   const RegList &liveRegisters /*= {}*/) {
   auto const liveRegistersAnd = this->liveRegistersAnd(liveRegisters);
   auto const r = x3::rule<struct member_address>{"member address"} =
-    checkMove(temps[0], memberIndex, liveRegistersAnd(base))
+    checkMove(temps[0], memberIndex, liveRegistersAnd(base) | ranges::to<RegList>())
     > checkMove(temps[1], wordSize(), liveRegistersAnd(base, temps[0]))
     > checkBinaryOperation(ir::BinOp::MUL, temps[0], temps[1], temps[2],
                            liveRegistersAnd(base))

@@ -11,7 +11,7 @@
 #include <boost/spirit/include/phoenix_object.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/phoenix_statement.hpp>
-MSC_DIAG_OFF(4996 4459)
+MSC_DIAG_OFF(4996 4459 4819)
 #include <boost/spirit/include/qi.hpp>
 MSC_DIAG_ON()
 
