@@ -1,9 +1,6 @@
 #include "CallingConvention.h"
 #include "Assembly.h"
-#include "warning_suppress.h"
-MSC_DIAG_OFF(4702)
 #include <range/v3/view/concat.hpp>
-MSC_DIAG_ON()
 #include <range/v3/view/single.hpp>
 
 namespace tiger {

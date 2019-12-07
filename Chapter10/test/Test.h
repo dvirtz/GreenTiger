@@ -1,14 +1,11 @@
 #include "Program.h"
 #include "Tree.h"
 #include "irange.h"
-#include "warning_suppress.h"
 #include <array>
 #include <boost/optional/optional_io.hpp>
 #include <set>
-MSC_DIAG_OFF(4496 4459 4127 4819)
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/utility/error_reporting.hpp>
-MSC_DIAG_ON()
 #include <boost/format.hpp>
 #include <boost/fusion/include/all.hpp>
 #include <boost/fusion/include/fold.hpp>
@@ -16,7 +13,6 @@ MSC_DIAG_ON()
 #define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
 #include <catch2/catch.hpp>
 #include <gsl/span>
-MSC_DIAG_OFF(4702 4172)
 #include <range/v3/action/drop.hpp>
 #include <range/v3/action/push_back.hpp>
 #include <range/v3/action/take.hpp>
@@ -35,7 +31,6 @@ MSC_DIAG_OFF(4702 4172)
 #include <range/v3/view/take.hpp>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/zip.hpp>
-MSC_DIAG_ON()
 
 namespace x3   = boost::spirit::x3;
 namespace ir   = tiger::ir;

@@ -4,6 +4,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 project(GreenTiger)
 
+include(CompilerWarnings)
 
 # Download automatically, you can also just copy the conan.cmake file
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
@@ -54,8 +55,6 @@ target_compile_options(range-v3
   INTERFACE 
     $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-Wno-deprecated-declarations> 
     $<$<CXX_COMPILER_ID:MSVC>:/wd4996;/Wv:18>)
-
-include(CompilerWarnings)
 
 option(BUILD_TESTS "Build tests" ON)
 if(BUILD_TESTS)

@@ -1,10 +1,7 @@
 #include "Test.h"
 #include "CallingConvention.h"
 #include "FlowGraph.h"
-#include "warning_suppress.h"
-MSC_DIAG_OFF(4459)
 #include "MachineRegistrar.h"
-MSC_DIAG_ON()
 #include <range/v3/algorithm/for_each.hpp>
 #include <range/v3/algorithm/mismatch.hpp>
 #include <range/v3/distance.hpp>

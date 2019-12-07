@@ -1,22 +1,13 @@
 #include "Assembly.h"
 #include "variantMatch.h"
-#include "warning_suppress.h"
-MSC_DIAG_OFF(4459 4127 4819)
 #include <boost/spirit/home/x3.hpp>
-MSC_DIAG_ON()
 #include <range/v3/algorithm/for_each.hpp>
-MSC_DIAG_OFF(4913)
 #include <range/v3/algorithm/copy.hpp>
 #include <range/v3/algorithm/move.hpp>
-MSC_DIAG_ON()
-MSC_DIAG_OFF(4459 4702)
 #include <range/v3/view/join.hpp>
-MSC_DIAG_ON()
 #include <gsl/span>
 #include <range/v3/algorithm/for_each.hpp>
-MSC_DIAG_OFF(4702)
 #include <range/v3/view/concat.hpp>
-MSC_DIAG_ON()
 #include <range/v3/view/single.hpp>
 #include <range/v3/view/transform.hpp>
 

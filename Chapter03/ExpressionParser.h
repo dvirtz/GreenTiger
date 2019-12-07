@@ -3,14 +3,11 @@
 #include "ErrorHandler.h"
 #include "IdentifierParser.h"
 #include "Skipper.h"
-#include "warning_suppress.h"
 #include <boost/spirit/include/phoenix_bind.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_object.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
-MSC_DIAG_OFF(4996 4459 4819)
 #include <boost/spirit/include/qi.hpp>
-MSC_DIAG_ON()
 
 namespace tiger {
 
@@ -41,7 +38,7 @@ public:
     using qi::repeat;
     using qi::uint_;
 
-    using namespace qi::labels;
+    using namespace boost::spirit::labels;
 
     lvalue =
       identifier >> *((lit('.') > identifier) | (lit('[') > expression > ']'));

@@ -1,8 +1,5 @@
-#include "warning_suppress.h"
-MSC_DIAG_OFF(4458 4457 4819)
 #include <boost/spirit/include/lex.hpp>
 #include <boost/spirit/include/lex_lexertl.hpp>
-MSC_DIAG_ON()
 #include <boost/spirit/include/phoenix_statement.hpp>
 #include <fstream>
 #include <string>

@@ -2,14 +2,11 @@
 #include "CallingConvention.h"
 #include "Tree.h"
 #include "x64Registers.h"
-#include "warning_suppress.h"
-MSC_DIAG_OFF(4702 4172)
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/concat.hpp>
 #include <range/v3/view/drop.hpp>
 #include <range/v3/view/iota.hpp>
 #include <range/v3/view/zip_with.hpp>
-MSC_DIAG_ON()
 
 namespace tiger {
 namespace assembly {
