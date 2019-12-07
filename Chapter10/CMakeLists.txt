@@ -25,8 +25,12 @@ set(HEADERS Program.h ErrorHandler.h ExpressionParser.h Skipper.h IdentifierPars
 add_library(Chapter10 ${HEADERS} ${SOURCES})
 
 target_include_directories(Chapter10 
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} 
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR} 
+    ${CONAN_GSL_MICROSOFT_ROOT}/include
+    ${CONAN_TYPE_SAFE_ROOT}/include
+  PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 if(MSVC)
@@ -39,7 +43,7 @@ target_link_libraries(Chapter10
   PUBLIC
     Boost::boost 
     includeHeaders
-    range-v3::range-v3
+    range-v3
 )
 
 add_subdirectory(test)

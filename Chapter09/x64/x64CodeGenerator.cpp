@@ -70,7 +70,7 @@ Instructions
              ? "mov " + *tempMap.lookup(argumentRegisters[index]) + ", " + arg
              : "push " + arg;
   };
-  return ranges::view::zip_with(
+  return ranges::views::zip_with(
     [&](int index, const ir::Expression &arg) {
       return helpers::match(arg)(
         [&](int i) {
@@ -87,7 +87,7 @@ Instructions
           return Move{};
         });
     },
-    ranges::view::ints, args);
+    ranges::views::ints, args);
 }
 
 } // namespace x64

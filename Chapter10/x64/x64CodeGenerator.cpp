@@ -2,7 +2,7 @@
 #include "CallingConvention.h"
 #include "Tree.h"
 #include "x64Registers.h"
-#include <range/v3/to_container.hpp>
+#include <range/v3/range/conversion.hpp>
 #include <range/v3/view/concat.hpp>
 #include <range/v3/view/drop.hpp>
 #include <range/v3/view/iota.hpp>
@@ -20,7 +20,7 @@ CodeGenerator::CodeGenerator(frame::CallingConvention &callingConvention) :
       {
         // clang-format off
             Pattern{ir::Move{ir::Call{label()}, callingConvention.returnValue()}, {{InstructionType::OPERATION, "call `l0", {0}, {}, 
-                    callingConvention.callDefinedRegisters() | ranges::to_<Arguments>()}}},
+                    callingConvention.callDefinedRegisters() | ranges::to<Arguments>()}}},
             Pattern{ir::Move{imm(), reg()}, {{InstructionType::OPERATION, "mov `d0, `i0", {1, 0}}}},
             Pattern{ir::Move{label(), reg()}, {{InstructionType::OPERATION, "mov `d0, `l0", {1, 0}}}},
             Pattern{ir::Move{imm(), ir::MemoryAccess{ir::BinaryOperation{ir::BinOp::PLUS, reg(), imm()}}}, 
@@ -61,9 +61,9 @@ CodeGenerator::CodeGenerator(frame::CallingConvention &callingConvention) :
             Pattern{ir::MemoryAccess{exp()}, {{InstructionType::OPERATION, "mov `d0, [`s0]", {1, 0}}}},
             Pattern{ir::Expression{imm()}, {{InstructionType::OPERATION, "mov `d0, `i0", {1, 0}}}},
             Pattern{ir::Call{label()}, {{InstructionType::OPERATION, "call `l0", {0}, {}, 
-                    callingConvention.callDefinedRegisters() | ranges::to_<Arguments>()}}}, 
+                    callingConvention.callDefinedRegisters() | ranges::to<Arguments>()}}}, 
             Pattern{ir::Call{exp()}, {{InstructionType::OPERATION, "call `s0", {0}, {}, 
-                    callingConvention.callDefinedRegisters() | ranges::to_<Arguments>()}}},
+                    callingConvention.callDefinedRegisters() | ranges::to<Arguments>()}}},
             Pattern{ir::Statement{label()}, {{InstructionType::LABEL, "`l0:", {0}}}}
         // clang-format on
       } // namespace assembly
@@ -79,7 +79,7 @@ Instructions CodeGenerator::translateString(const temp::Label &label,
 Instructions
   CodeGenerator::translateArgs(const std::vector<ir::Expression> &args,
                                const temp::Map & /*tempMap*/) const {
-  namespace rv                 = ranges::view;
+  namespace rv                 = ranges::views;
   auto const registerArguments = rv::zip_with(
     [](temp::Register argumentRegister, const ir::Expression &arg) {
       return helpers::match(arg)(

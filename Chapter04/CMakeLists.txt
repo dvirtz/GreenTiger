@@ -4,7 +4,6 @@ set(HEADERS Program.h ErrorHandler.h ExpressionParser.h Skipper.h IdentifierPars
 
 add_executable(Chapter04 ${HEADERS} ${SOURCES})
 
-target_compile_definitions(Chapter04 PRIVATE CATCH_CPP14_OR_GREATER $<$<CONFIG:Debug>:BOOST_SPIRIT_DEBUG>)
 
 if(MSVC)
 	set_source_files_properties(Program.cpp PROPERTIES COMPILE_FLAGS /bigobj)
@@ -15,7 +14,7 @@ target_link_libraries(Chapter04
         Boost::boost 
         Boost::filesystem 
         Boost::system
-        Catch2::Catch 
+        Catch2::Catch2 
         includeHeaders)
 
 parse_unit_tests(Chapter04)

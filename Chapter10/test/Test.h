@@ -1,23 +1,17 @@
 #include "Program.h"
 #include "Tree.h"
 #include "irange.h"
-#include "warning_suppress.h"
-#ifdef _MSC_VER
-#include "satisfy_boost_range_backport.hpp"
-#endif
 #include <array>
 #include <boost/optional/optional_io.hpp>
 #include <set>
-MSC_DIAG_OFF(4496 4459 4127)
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/utility/error_reporting.hpp>
-MSC_DIAG_ON()
 #include <boost/format.hpp>
 #include <boost/fusion/include/all.hpp>
 #include <boost/fusion/include/fold.hpp>
 #include <boost/fusion/include/std_tuple.hpp>
 #define CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 #include <gsl/span>
 #include <range/v3/action/drop.hpp>
 #include <range/v3/action/push_back.hpp>
@@ -27,9 +21,7 @@ MSC_DIAG_ON()
 #include <range/v3/algorithm/find.hpp>
 #include <range/v3/algorithm/for_each.hpp>
 #include <range/v3/numeric/accumulate.hpp>
-MSC_DIAG_OFF(4702 4172)
 #include <range/v3/view/concat.hpp>
-MSC_DIAG_ON()
 #include <range/v3/view/drop.hpp>
 #include <range/v3/view/empty.hpp>
 #include <range/v3/view/filter.hpp>
@@ -39,12 +31,6 @@ MSC_DIAG_ON()
 #include <range/v3/view/take.hpp>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/zip.hpp>
-
-#ifdef _MSC_VER
-// make these work with boost
-RANGES_SATISFY_BOOST_RANGE(ranges::v3::iter_transform_view)
-RANGES_SATISFY_BOOST_RANGE(ranges::v3::transform_view)
-#endif
 
 namespace x3   = boost::spirit::x3;
 namespace ir   = tiger::ir;
@@ -145,10 +131,10 @@ protected:
 
     template <typename Cont,
               typename = std::enable_if_t<std::is_constructible<
-                base, decltype(ranges::begin(std::declval<Cont>())),
-                decltype(ranges::end(std::declval<Cont>()))>::value>>
-    RegList(const Cont &registers) :
-        base{ranges::begin(registers), ranges::end(registers)} {}
+                base, decltype(ranges::begin(std::declval<Cont&>())),
+                decltype(ranges::end(std::declval<Cont&&>()))>::value>>
+    RegList(Cont &&registers) :
+        base{ranges::begin(std::forward<Cont>(registers)), ranges::end(std::forward<Cont>(registers))} {}
   };
 
   template <typename SuccessorsChecker>
@@ -400,8 +386,8 @@ inline TestFixture::parser TestFixture::checkReg(const temp::Register &reg) {
 inline TestFixture::parser TestFixture::checkReg(OptReg &reg) {
   static auto const predefinedRegisters = this->predefinedRegisters();
   static const x3::symbols<temp::Register> regsParser{
-    predefinedRegisters | ranges::view::values,
-    predefinedRegisters | ranges::view::keys, "regsParser"};
+    predefinedRegisters | ranges::views::values,
+    predefinedRegisters | ranges::views::keys, "regsParser"};
   auto const r = x3::rule<struct reg_>{"register"} =
     ((x3::lit("t") >> x3::int_[setOrCheck(reg)]) | regsParser[setOrCheck(reg)]);
   return r;
@@ -541,7 +527,7 @@ inline TestFixture::parser TestFixture::checkMove(Dst &&dest, Src &&src,
 
 inline auto TestFixture::liveRegistersAnd(const RegList &liveRegisters) const {
   return [&liveRegisters](auto&&... regs) {
-    return ranges::view::concat(liveRegisters, ranges::view::single(Reg{regs})...);
+    return ranges::views::concat(liveRegisters, ranges::views::single(Reg{regs})...);
   };
 }
 
@@ -614,11 +600,11 @@ inline TestFixture::parser TestFixture::checkArg(size_t index, Arg &&arg,
     helpers::overload([](OptReg &reg) { return RegList{reg}; },
                       [](auto && /*default*/) { return RegList{}; })(arg);
 
-  auto const r = x3::rule<struct arg>("argument") = [&]() -> parser {
+  auto const r = x3::rule<struct arg_>("argument") = [&]() -> parser {
     if (arch == "m68k") {
       return checkMove(
         x3::lit('+') > checkMemoryAccess(checkReg(stackPointer())), argChecker,
-        ranges::view::concat(ranges::view::single(stackPointer()), uses));
+        ranges::views::concat(ranges::views::single(stackPointer()), uses));
     }
 
     static const auto &argumentRegisters = this->argumentRegisters();
@@ -648,15 +634,15 @@ inline TestFixture::parser TestFixture::checkArgs(const RegList &liveRegisters,
     },
     [](const temp::Register &r) { return boost::optional<Reg>{r}; },
     [](const auto &) { return boost::optional<Reg>{}; });
-  auto const arguments   = view::concat(view::single(toOptReg(args))...);
+  auto const arguments   = views::concat(views::single(toOptReg(args))...);
   auto withLiveArguments = [&liveRegisters, arguments](size_t i) -> RegList {
     std::vector<boost::optional<Reg>> a{
-      arguments | view::drop(i + 1)
-      | view::filter(
+      arguments | views::drop(i + 1)
+      | views::filter(
           [](const boost::optional<Reg> &r) { return r.is_initialized(); })};
-    return view::concat(
+    return views::concat(
       liveRegisters,
-      view::transform(a, [](const boost::optional<Reg> &r) { return *r; }));
+      views::transform(a, [](const boost::optional<Reg> &r) { return *r; }));
   };
   return combineParsers(checkArg(I, args, withLiveArguments(I))...);
 }
@@ -795,7 +781,7 @@ inline TestFixture::parser
                                   const RegList &liveRegisters /*= {}*/) {
   auto const liveRegistersAnd = this->liveRegistersAnd(liveRegisters);
   auto const r = x3::rule<struct member_address>{"member address"} =
-    checkMove(temps[0], memberIndex, liveRegistersAnd(base))
+    checkMove(temps[0], memberIndex, liveRegistersAnd(base) | ranges::to<RegList>())
     > checkMove(temps[1], wordSize(), liveRegistersAnd(base, temps[0]))
     > checkBinaryOperation(ir::BinOp::MUL, temps[0], temps[1], temps[2],
                            liveRegistersAnd(base))
@@ -905,7 +891,7 @@ inline TestFixture::parser TestFixture::checkParameterMove(size_t index,
     x3::rule<struct parameter_move>{"parameter move"} = [&]() -> parser {
     if (index < argumentRegisters.size()) {
       auto const liveRegisters =
-        argumentRegisters | ranges::view::slice(index + 1, argumentCount) | ranges::to_vector;
+        argumentRegisters | ranges::views::slice(index + 1, argumentCount) | ranges::to_vector;
       return checkInlineParameterWrite(
         index, std::forward<Arg>(arg), checkReg(argumentRegisters[index]),
         {argumentRegisters[index]}, {}, liveRegisters, does_escape<Arg>::value);

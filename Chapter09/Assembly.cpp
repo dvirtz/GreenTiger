@@ -1,18 +1,11 @@
 #include "Assembly.h"
 #include "variantMatch.h"
-#include "warning_suppress.h"
-MSC_DIAG_OFF(4459 4127)
 #include <boost/spirit/home/x3.hpp>
-MSC_DIAG_ON()
 #include <range/v3/algorithm/for_each.hpp>
 #ifdef _MSC_VER
-MSC_DIAG_OFF(4913)
 #include <range/v3/algorithm/move.hpp>
-MSC_DIAG_ON()
 #endif
-MSC_DIAG_OFF(4459)
 #include <range/v3/action/join.hpp>
-MSC_DIAG_ON()
 #include <gsl/span>
 #include <range/v3/view/intersperse.hpp>
 
@@ -25,7 +18,7 @@ Operation::Operation(std::initializer_list<std::string> syntaxes,
                      const Registers &sources /* = {} */,
                      const Labels &labels /* = {} */,
                      const Immediates &immediates /* = {} */) :
-    m_syntax{syntaxes | ranges::view::intersperse("\n") | ranges::action::join},
+    m_syntax{syntaxes | ranges::views::intersperse("\n") | ranges::actions::join},
     m_destinations{destinations}, m_sources{sources}, m_jumps{labels},
     m_immediates{immediates} {}
 
@@ -101,16 +94,7 @@ std::ostream &operator<<(
 
 assembly::Instructions
   joinInstructions(ranges::any_view<Instructions> instructions) {
-  using namespace ranges;
-#ifdef _MSC_VER
-  assembly::Instructions res;
-  for (auto &&insts : instructions) {
-    move(insts, back_inserter(res));
-  }
-  return res;
-#else
-  return action::join(instructions);
-#endif
+  return ranges::actions::join(instructions);
 }
 
 } // namespace assembly

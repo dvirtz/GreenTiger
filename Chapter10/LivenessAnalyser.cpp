@@ -3,9 +3,7 @@
 #include "FlowGraph.h"
 #include "irange.h"
 #include "variantMatch.h"
-#include "warning_suppress.h"
 #include <boost/graph/graph_utility.hpp>
-MSC_DIAG_OFF(4239 4459 4913)
 #include <range/v3/action/join.hpp>
 #include <range/v3/action/sort.hpp>
 #include <range/v3/action/unique.hpp>
@@ -18,10 +16,10 @@ MSC_DIAG_OFF(4239 4459 4913)
 #include <range/v3/algorithm/is_sorted.hpp>
 #include <range/v3/view/filter.hpp>
 #include <range/v3/view/transform.hpp>
-MSC_DIAG_ON()
+#include <range/v3/iterator/insert_iterators.hpp>
 
-namespace rv = ranges::view;
-namespace ra = ranges::action;
+namespace rv = ranges::views;
+namespace ra = ranges::actions;
 
 namespace tiger {
 namespace regalloc {

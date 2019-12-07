@@ -11,7 +11,7 @@ Frame::Frame(temp::Map &tempMap, const CallingConvention &callingConvention) :
 
 ir::Statement Frame::procEntryExit1(const ir::Statement &body) const {
   return ir::Sequence{
-    ranges::view::concat(m_parameterMoves, ranges::view::single(body))};
+    ranges::views::concat(m_parameterMoves, ranges::views::single(body))};
 }
 
 assembly::Instructions

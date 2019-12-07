@@ -2,7 +2,7 @@
 #include "Tree.h"
 #include "m68kCallingConvention.h"
 #include "variantMatch.h"
-#include <range/v3/to_container.hpp>
+#include <range/v3/range/conversion.hpp>
 #include <range/v3/view/transform.hpp>
 
 namespace tiger {
@@ -15,7 +15,7 @@ CodeGenerator::CodeGenerator(frame::CallingConvention &callingConvention) :
       {
         // clang-format off
             Pattern{ir::Move{ir::Call{label()}, callingConvention.returnValue()}, {{InstructionType::OPERATION, "JSR `l0", {0}, {}, 
-                    callingConvention.callDefinedRegisters() | ranges::to_<Arguments>()}}},
+                    callingConvention.callDefinedRegisters() | ranges::to<Arguments>()}}},
             Pattern{ir::Move{imm(), reg()}, {{InstructionType::OPERATION, "MOVE #`i0, `d0", {0, 1}}}},
             Pattern{ir::Move{label(), reg()}, {{InstructionType::OPERATION, "MOVE #`l0, `d0", {0, 1}}}},
             Pattern{ir::Move{imm(), ir::MemoryAccess{ir::BinaryOperation{ir::BinOp::PLUS, reg(), imm()}}}, 
@@ -54,9 +54,9 @@ CodeGenerator::CodeGenerator(frame::CallingConvention &callingConvention) :
             Pattern{ir::MemoryAccess{exp()}, {{InstructionType::OPERATION, "MOVE (`s0), `d0", {0, 1}}}},
             Pattern{ir::Expression{imm()}, {{InstructionType::OPERATION, "MOVE #`i0, `d0", {0, 1}}}},
             Pattern{ir::Call{label()}, {{InstructionType::OPERATION, "JSR `l0", {0}, {}, 
-                    callingConvention.callDefinedRegisters() | ranges::to_<Arguments>()}}}, 
+                    callingConvention.callDefinedRegisters() | ranges::to<Arguments>()}}}, 
             Pattern{ir::Call{exp()}, {{InstructionType::OPERATION, "JSR `s0", {0}, {}, 
-                    callingConvention.callDefinedRegisters() | ranges::to_<Arguments>()}}},
+                    callingConvention.callDefinedRegisters() | ranges::to<Arguments>()}}},
             Pattern{ir::Statement{label()}, {{InstructionType::LABEL, "`l0:", {0}}}}
         // clang-format on
       }} {}
@@ -70,7 +70,7 @@ Instructions CodeGenerator::translateString(const temp::Label &label,
 Instructions
   CodeGenerator::translateArgs(const std::vector<ir::Expression> &args,
                                const temp::Map & /* tempMap */) const {
-  return args | ranges::view::transform([this](const ir::Expression &arg) {
+  return args | ranges::views::transform([this](const ir::Expression &arg) {
            return helpers::match(arg)(
              [this](int i) {
                return Operation{"MOVE #`i0, +(`s0)",

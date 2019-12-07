@@ -1,8 +1,6 @@
 #include "Test.h"
-MSC_DIAG_OFF(4459)
 #include <range/v3/action/sort.hpp>
 #include <range/v3/action/unique.hpp>
-MSC_DIAG_ON()
 #include <boost/format.hpp>
 
 TEST_CASE_METHOD(TestFixture, "arithmetic") {

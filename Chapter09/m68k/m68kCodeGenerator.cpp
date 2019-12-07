@@ -65,7 +65,7 @@ Instructions CodeGenerator::translateString(const temp::Label &label,
 Instructions
   CodeGenerator::translateArgs(const std::vector<ir::Expression> &args,
                                const temp::Map & /* tempMap */) const {
-  return args | ranges::view::transform([](const ir::Expression &arg) {
+  return args | ranges::views::transform([](const ir::Expression &arg) {
            return helpers::match(arg)(
              [](int i) {
                return Move{"MOVE #`i0, -(sp)", {}, {}, {}, {i}};

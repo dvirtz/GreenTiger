@@ -2,10 +2,7 @@
 #include "Annotation.h"
 #include "ErrorHandler.h"
 #include "Skipper.h"
-#include "warning_suppress.h"
-MSC_DIAG_OFF(4996 4459)
 #include <boost/spirit/include/qi.hpp>
-MSC_DIAG_ON()
 #include <boost/spirit/include/phoenix_bind.hpp>
 
 namespace tiger {
@@ -23,6 +20,7 @@ public:
     namespace phoenix = boost::phoenix;
 
     using namespace std::string_literals;
+    using namespace boost::spirit::labels;
 
     using qi::fail;
     using qi::lit;
@@ -34,8 +32,6 @@ public:
     using ascii::space;
 
     using phoenix::bind;
-
-    using namespace qi::labels;
 
     string = lit('"')
              > skip(skipper.alias())[*(escapeCharacter | controlCharacter

@@ -2,32 +2,59 @@ cmake_minimum_required(VERSION 3.3)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
-include(HunterGate)
-
-HunterGate(
-    URL "https://github.com/ruslo/hunter/archive/v0.23.66.tar.gz"
-    SHA1 "c599029cf00b124c624702739741fead5d4e605d"
-)
-
 project(GreenTiger)
 
-set(BOOST_COMPONENTS system filesystem)
-hunter_add_package(Boost COMPONENTS ${BOOST_COMPONENTS})
-find_package(Boost CONFIG REQUIRED ${BOOST_COMPONENTS})
+include(CompilerWarnings)
 
-hunter_add_package(Catch)
+# Download automatically, you can also just copy the conan.cmake file
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+   message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+   file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/master/conan.cmake"
+                  "${CMAKE_BINARY_DIR}/conan.cmake")
+endif()
+
+include(${CMAKE_BINARY_DIR}/conan.cmake)
+
+if(WIN32)
+  find_program(CONAN conan.bat)
+endif()
+
+conan_check()
+
+conan_add_remote(
+  NAME manu343726 
+  URL https://api.bintray.com/conan/manu343726/conan-packages)
+
+
+set(DEPENDENCIES 
+      boost/1.71.0@_/_
+      range-v3/0.9.0@ericniebler/stable
+      Catch2/2.9.2@catchorg/stable
+      gsl_microsoft/2.0.0@bincrafters/stable
+      type_safe/0.3@Manu343726/testing
+)
+
+conan_cmake_run(REQUIRES ${DEPENDENCIES}
+                CONAN_COMMAND ${CONAN}
+                GENERATORS cmake_paths
+                BUILD missing)
+
+include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
+
+set(Boost_USE_STATIC_LIBS ON)
+
+find_package(Boost REQUIRED COMPONENTS system filesystem)
+
+set_target_properties(Boost::filesystem PROPERTIES INTERFACE_COMPILE_DEFINITIONS "BOOST_ALL_NO_LIB")
+
 find_package(Catch2 CONFIG REQUIRED)
 
-hunter_add_package(range-v3)
 find_package(range-v3 CONFIG REQUIRED)
 
-hunter_add_package(Microsoft.GSL)
-find_package(Microsoft.GSL CONFIG REQUIRED)
-
-hunter_add_package(type_safe)
-find_package(type_safe CONFIG REQUIRED)
-
-include(CompilerWarnings)
+target_compile_options(range-v3 
+  INTERFACE 
+    $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-Wno-deprecated-declarations> 
+    $<$<CXX_COMPILER_ID:MSVC>:/wd4996;/Wv:18>)
 
 option(BUILD_TESTS "Build tests" ON)
 if(BUILD_TESTS)

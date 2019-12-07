@@ -16,10 +16,8 @@
 #include <boost/spirit/include/classic_position_iterator.hpp>
 #include <boost/spirit/include/support_multi_pass.hpp>
 #include <fstream>
-MSC_DIAG_OFF(4459)
 #include <range/v3/action/join.hpp>
 #include <range/v3/action/transform.hpp>
-MSC_DIAG_ON()
 #include <range/v3/algorithm/for_each.hpp>
 #include <range/v3/view/iota.hpp>
 #include <range/v3/view/join.hpp>
@@ -70,8 +68,8 @@ CompileResult compile(const std::string &arch, Iterator &first,
       Canonicalizer canonicalizer{tempMap};
       auto &codeGenerator = machine->codeGenerator();
 
-      namespace rv = ranges::view;
-      namespace ra = ranges::action;
+      namespace rv = ranges::views;
+      namespace ra = ranges::actions;
       auto const fragments =
         compiled | rv::transform([&](Fragment &fragment) {
           return helpers::match(fragment)(

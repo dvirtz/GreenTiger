@@ -59,7 +59,7 @@ CompileResult compile(const std::string &arch, Iterator &first,
 
       using namespace ranges;
       auto instructions =
-        compiled | view::transform([&](Fragment &fragment) {
+        compiled | views::transform([&](Fragment &fragment) {
           return helpers::match(fragment)(
             [&](FunctionFragment &function) {
               auto canonicalized =

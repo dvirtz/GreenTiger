@@ -3,7 +3,7 @@
 // macros to suppress compiler warnings
 // see https://svn.boost.org/trac10/wiki/Guidelines/WarningsGuidelines
 
-#ifdef _MSC_VER
+#ifdef DUMMY_MSC_VER
 #define MSC_DIAG_OFF(numbers) \
     __pragma(warning(push)) \
     __pragma(warning(disable:numbers))

@@ -1,0 +1,28 @@
+name: green_tiget workflow
+on:
+  pull_request:
+  push:
+    branches: master
+
+jobs:
+  ubuntu:
+    strategy:
+      matrix:
+        image: [gcc9, clang9]
+        build_type: [Debug, Release]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2-beta
+      - name: run docker
+        run: docker run --rm -v $GITHUB_WORKSPACE:/home/conan/repo conanio/${{ matrix.image }} cmake -DBUILD_TYPE=${{ matrix.build_type }} -P /home/conan/repo/ci/build.cmake
+
+  windows-docker:
+    strategy:
+      matrix:
+        image: ['dvirtz/msvc_16:lstc2019']
+        build_type: [Debug, Release]
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v2-beta
+      - name: run docker
+        run: docker run --rm --mount type=bind,source=$env:GITHUB_WORKSPACE,destination=C:\Users\ContainerAdministrator\repo ${{ matrix.image }} cmake -DBUILD_TYPE=${{ matrix.build_type }} -P C:\Users\ContainerAdministrator\repo\ci\build.cmake

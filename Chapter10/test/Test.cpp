@@ -1,10 +1,7 @@
 #include "Test.h"
 #include "CallingConvention.h"
 #include "FlowGraph.h"
-#include "warning_suppress.h"
-MSC_DIAG_OFF(4459)
 #include "MachineRegistrar.h"
-MSC_DIAG_ON()
 #include <range/v3/algorithm/for_each.hpp>
 #include <range/v3/algorithm/mismatch.hpp>
 #include <range/v3/distance.hpp>
@@ -145,10 +142,10 @@ public:
       return false;
     }
 
-    auto m = mismatch(other, m_r);
-    if (m.first != end(other)) {
-      m_message = "at index "s + stringify(distance(begin(other), m.first))
-                  + ": " + stringify(*m.first) + " != " + stringify(*m.second);
+    auto &&[first, last] = mismatch(other, m_r);
+    if (first != end(other)) {
+      m_message = "at index "s + stringify(distance(begin(other), first))
+                  + ": " + stringify(*first) + " != " + stringify(*last);
       return false;
     }
 
@@ -173,7 +170,7 @@ void TestFixture::checkInterference(
   const InterferenceGraphs &interefernceGraphs) const {
   REQUIRE(ranges::distance(interefernceGraphs)
           == ranges::distance(m_interferences));
-  ranges::for_each(ranges::view::zip(interefernceGraphs, m_interferences),
+  ranges::for_each(ranges::views::zip(interefernceGraphs, m_interferences),
                    [](const auto &p) {
                      REQUIRE_THAT(p.first, Equals<decltype(p.first)>(p.second));
                    });

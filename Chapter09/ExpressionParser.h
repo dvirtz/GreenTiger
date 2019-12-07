@@ -4,16 +4,13 @@
 #include "IdentifierParser.h"
 #include "Skipper.h"
 #include "StringParser.h"
-#include "warning_suppress.h"
 #include <boost/spirit/include/phoenix_bind.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_fusion.hpp>
 #include <boost/spirit/include/phoenix_object.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/phoenix_statement.hpp>
-MSC_DIAG_OFF(4996 4459)
 #include <boost/spirit/include/qi.hpp>
-MSC_DIAG_ON()
 
 namespace tiger {
 
@@ -34,6 +31,7 @@ public:
     namespace phoenix = boost::phoenix;
 
     using namespace std::string_literals;
+    using namespace boost::spirit::qi::labels;
 
     using ascii::alnum;
     using phoenix::at_c;
@@ -51,8 +49,6 @@ public:
     using qi::skip;
     using qi::uint_;
     using qi::uint_parser;
-
-    using namespace qi::labels;
 
     relationalOp.add("=", ast::Operation::EQUAL)("<>",
                                                  ast::Operation::NOT_EQUAL)(

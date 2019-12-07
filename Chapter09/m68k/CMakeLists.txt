@@ -11,4 +11,5 @@ target_link_libraries(${CHAPTER}_m68k
   PRIVATE 
     includeHeaders 
     Boost::boost
+    range-v3
 )

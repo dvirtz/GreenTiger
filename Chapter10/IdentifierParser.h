@@ -2,10 +2,7 @@
 #include "Annotation.h"
 #include "ErrorHandler.h"
 #include "Skipper.h"
-#include "warning_suppress.h"
-MSC_DIAG_OFF(4996 4459)
 #include <boost/spirit/include/qi.hpp>
-MSC_DIAG_ON()
 #include <boost/spirit/include/phoenix_bind.hpp>
 
 namespace tiger {
@@ -23,6 +20,7 @@ public:
     namespace phoenix = boost::phoenix;
 
     using namespace std::string_literals;
+    using namespace boost::spirit::labels;
 
     using ascii::alnum;
     using ascii::alpha;
@@ -33,8 +31,6 @@ public:
     using qi::on_error;
     using qi::on_success;
     using qi::raw;
-
-    using namespace qi::labels;
 
     keywords.add("array")("if")("then")("else")("while")("for")("to")("do")(
       "let")("in")("end")("of")("break")("nil")("function")("var")("type");

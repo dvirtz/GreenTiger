@@ -1,14 +1,11 @@
 #include "FlowGraph.h"
 #include "variantMatch.h"
-#include "warning_suppress.h"
 #include <boost/graph/graph_utility.hpp>
-MSC_DIAG_OFF(4459)
 #include <range/v3/action/sort.hpp>
 #include <range/v3/action/unique.hpp>
 #include <range/v3/algorithm/for_each.hpp>
-#include <range/v3/to_container.hpp>
+#include <range/v3/range/conversion.hpp>
 #include <range/v3/view.hpp>
-MSC_DIAG_ON()
 #include <unordered_map>
 
 namespace tiger {
@@ -17,8 +14,8 @@ FlowGraph::FlowGraph(const assembly::Instructions &instructions) :
     base{instructions.size()}, m_uses{instructions.size()},
     m_defs{instructions.size()}, m_isMove{instructions.size()} {
   using namespace assembly;
-  namespace rv = ranges::view;
-  namespace ra = ranges::action;
+  namespace rv = ranges::views;
+  namespace ra = ranges::actions;
 
   const std::unordered_map<temp::Label, int> label_map =
     rv::zip(instructions, rv::ints)

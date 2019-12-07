@@ -1,6 +1,7 @@
 #include "CallingConvention.h"
 #include "Assembly.h"
-#include <range/v3/view.hpp>
+#include <range/v3/view/concat.hpp>
+#include <range/v3/view/single.hpp>
 
 namespace tiger {
 namespace frame {
@@ -24,7 +25,7 @@ ir::Expression
 }
 
 temp::Registers CallingConvention::liveAtExitRegisters() const {
-  namespace rv     = ranges::view;
+  namespace rv     = ranges::views;
   auto calleeSaved = calleeSavedRegisters();
   return rv::concat(calleeSaved, rv::single(stackPointer()));
 }
@@ -33,13 +34,13 @@ assembly::Instructions
   CallingConvention::procEntryExit2(const assembly::Instructions &body) const {
   // appends a “sink” instruction to the function body to tell the
   // register allocator that certain registers are live at procedure exit
-  namespace rv     = ranges::view;
+  namespace rv     = ranges::views;
 #ifdef _MSC_VER
   auto res = body;
   res.push_back(assembly::Operation{{}, {}, liveAtExitRegisters()});
   return res;
 #else
-  return ranges::view::concat(
+  return ranges::views::concat(
     body, rv::single(assembly::Operation{{}, {}, liveAtExitRegisters()}));
 #endif
 }

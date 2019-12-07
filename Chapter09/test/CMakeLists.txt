@@ -3,8 +3,7 @@ add_library(${CHAPTER}_testMain STATIC Test.h TestMain.cpp checkedCompile.cpp)
 set_target_properties(${CHAPTER}_testMain PROPERTIES OUTPUT_NAME testMain)
 
 target_link_libraries(${CHAPTER}_testMain PUBLIC 
-  Catch2::Catch
-  Microsoft.GSL::GSL
+  Catch2::Catch2
   Boost::filesystem
   Boost::system 
   includeHeaders

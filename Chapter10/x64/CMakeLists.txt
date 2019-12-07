@@ -5,10 +5,16 @@ add_library(${CHAPTER}_x64 ${HEADERS} ${SOURCES})
 
 set_target_properties(${CHAPTER}_x64 PROPERTIES OUTPUT_NAME x64)
 
-target_include_directories(${CHAPTER}_x64 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+target_include_directories(${CHAPTER}_x64 
+  PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/.. 
+    ${CONAN_TYPE_SAFE_ROOT}/include    
+    ${CONAN_GSL_MICROSOFT_ROOT}/include
+)
 
 target_link_libraries(${CHAPTER}_x64 
   PRIVATE 
     includeHeaders 
     Boost::boost
+    range-v3
 )

@@ -6,7 +6,6 @@
  */
 
 #include "TempMap.h"
-#include "warning_suppress.h"
 #include <boost/optional.hpp>
 #include <ostream>
 

@@ -3,7 +3,11 @@
 
 # VS Code
 .vscode/
+.history/
 
 # build folders
 _*/
 build
+
+# pyenv
+.python-version

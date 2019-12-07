@@ -1,22 +1,13 @@
 #include "Assembly.h"
 #include "variantMatch.h"
-#include "warning_suppress.h"
-MSC_DIAG_OFF(4459 4127)
 #include <boost/spirit/home/x3.hpp>
-MSC_DIAG_ON()
 #include <range/v3/algorithm/for_each.hpp>
-MSC_DIAG_OFF(4913)
 #include <range/v3/algorithm/copy.hpp>
 #include <range/v3/algorithm/move.hpp>
-MSC_DIAG_ON()
-MSC_DIAG_OFF(4459)
 #include <range/v3/view/join.hpp>
-MSC_DIAG_ON()
 #include <gsl/span>
 #include <range/v3/algorithm/for_each.hpp>
-MSC_DIAG_OFF(4702)
 #include <range/v3/view/concat.hpp>
-MSC_DIAG_ON()
 #include <range/v3/view/single.hpp>
 #include <range/v3/view/transform.hpp>
 
@@ -72,7 +63,7 @@ void Instruction::print(std::ostream &out, const temp::Map &tempMap) const {
 
   auto const noop = [](size_t) { assert(false && "should not get here"); };
 
-  namespace rv = ranges::view;
+  namespace rv = ranges::views;
 
   helpers::match (*this)(
     [&](const Label &label) {
@@ -109,7 +100,7 @@ Instruction Instruction::create(const InstructionType type,
     parse(inst.m_syntax, setOperand(inst.m_labels),
           setOperand(inst.m_destinations), setOperand(inst.m_sources),
           setOperand(inst.m_immediates), noop);
-    auto const toRegisters = ranges::view::transform(
+    auto const toRegisters = ranges::views::transform(
       [](const Operand &op) { return boost::get<temp::Register>(op); });
     inst.m_implicitDestinations = implicitDestinations | toRegisters;
     inst.m_implicitSources      = implicitSources | toRegisters;
@@ -155,7 +146,7 @@ temp::Registers Instruction::destinations() const {
   return helpers::match(*this)(
     [](const Label &) -> temp::Registers { return {}; },
     [](const auto &inst) -> temp::Registers {
-      return ranges::view::concat(inst.m_destinations,
+      return ranges::views::concat(inst.m_destinations,
                                   inst.m_implicitDestinations);
     });
 }
@@ -164,7 +155,7 @@ temp::Registers Instruction::sources() const {
   return helpers::match(*this)(
     [](const Label &) -> temp::Registers { return {}; },
     [](const auto &inst) -> temp::Registers {
-      return ranges::view::concat(inst.m_sources, inst.m_implicitSources);
+      return ranges::views::concat(inst.m_sources, inst.m_implicitSources);
     });
 }
 
@@ -188,15 +179,7 @@ std::ostream &operator<<(
 assembly::Instructions
   joinInstructions(gsl::span<const Instructions> instructions) {
   using namespace ranges;
-#ifdef _MSC_VER
-  assembly::Instructions res;
-  for (auto &&insts : instructions) {
-    move(insts, back_inserter(res));
-  }
-  return res;
-#else
-  return instructions | view::join;
-#endif
+  return instructions | views::join;
 }
 
 } // namespace assembly

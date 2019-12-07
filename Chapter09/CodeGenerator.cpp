@@ -2,20 +2,16 @@
 #include "CallingConvention.h"
 #include "TreeAdapted.h"
 #include "variantMatch.h"
-#include "warning_suppress.h"
 #include <boost/fusion/include/algorithm.hpp>
 #include <boost/fusion/include/make_vector.hpp>
 #include <boost/fusion/include/zip_view.hpp>
 #include <boost/optional.hpp>
-MSC_DIAG_OFF(4996 4459 4456)
 #include <boost/spirit/include/karma.hpp>
-MSC_DIAG_ON()
 #include <range/v3/algorithm/for_each.hpp>
-MSC_DIAG_OFF(4913)
 #include <range/v3/algorithm/move.hpp>
-MSC_DIAG_ON()
 #include <range/v3/action/push_back.hpp>
 #include <range/v3/view/transform.hpp>
+#include <range/v3/iterator/insert_iterators.hpp>
 #include <regex>
 #include <sstream>
 
@@ -301,7 +297,7 @@ bool DagMatcher::match(const ir::Call &code, const ir::Call &pattern,
 
   bool matchFailed = false;
   auto args =
-    code.args | ranges::view::transform([&](const ir::Expression &arg) {
+    code.args | ranges::views::transform([&](const ir::Expression &arg) {
       return helpers::match(arg)(
         [](int i) -> ir::Expression { return i; },
         [](const temp::Register &reg) -> ir::Expression { return reg; },
